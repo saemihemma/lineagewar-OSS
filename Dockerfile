@@ -16,4 +16,5 @@ RUN cd verifier && npm install
 
 EXPOSE 3001
 
-CMD ["npx", "tsx", "verifier/src/live-chain-loop.ts"]
+WORKDIR /app/verifier
+CMD ["npx", "tsx", "src/live-chain-loop.ts"]
