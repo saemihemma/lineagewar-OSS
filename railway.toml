@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd admin && npm install && npm run build && cd ../scoreboard && npm install && npm run build && cd ../verifier && npm install"
+
+[deploy]
+startCommand = "cd verifier && npx tsx src/live-chain-loop.ts"
+healthcheckPath = "/status"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
