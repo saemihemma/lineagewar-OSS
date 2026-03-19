@@ -1,0 +1,42 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773238109944,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "seeded-live",
+  "latestTickMs": 1773232200000,
+  "availableTicks": [
+    {
+      "tickTimestampMs": 1773230400000,
+      "path": "audit/.tmp-live-clock-60/ticks/1773230400000.json",
+      "receiptPath": "audit/.tmp-live-clock-60/receipts/1773230400000.json",
+      "systemCount": 3
+    },
+    {
+      "tickTimestampMs": 1773231300000,
+      "path": "audit/.tmp-live-clock-60/ticks/1773231300000.json",
+      "receiptPath": "audit/.tmp-live-clock-60/receipts/1773231300000.json",
+      "systemCount": 3
+    },
+    {
+      "tickTimestampMs": 1773232200000,
+      "path": "audit/.tmp-live-clock-60/ticks/1773232200000.json",
+      "receiptPath": "audit/.tmp-live-clock-60/receipts/1773232200000.json",
+      "systemCount": 3
+    }
+  ],
+  "trackedSystems": [
+    {
+      "id": "30005277",
+      "name": "30005277"
+    },
+    {
+      "id": "30017227",
+      "name": "30017227"
+    },
+    {
+      "id": "30020691",
+      "name": "30020691"
+    }
+  ],
+  "latestPath": "audit/.tmp-live-clock-60/ticks/1773232200000.json"
+}

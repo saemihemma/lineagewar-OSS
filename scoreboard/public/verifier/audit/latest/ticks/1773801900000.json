@@ -1,0 +1,163 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773801932429,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "live-chain",
+  "tickTimestampMs": 1773801900000,
+  "warId": 13,
+  "tickPlan": [
+    {
+      "tickTimestampMs": 1773801900000,
+      "systemId": 30000005
+    }
+  ],
+  "commitments": [
+    {
+      "warId": 13,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773801900000,
+      "state": "NEUTRAL",
+      "controllerTribeId": null,
+      "pointsAwarded": 0,
+      "snapshotHash": "0x841ccdfbd6ea404c4ec5a4aaaa1c25333071261ea23e5e8f1dc65919cfe1fb96"
+    }
+  ],
+  "snapshots": [
+    {
+      "snapshotVersion": 1,
+      "warId": 13,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773801900000,
+      "state": "NEUTRAL",
+      "controllerTribeId": null,
+      "pointsAwarded": [],
+      "config": {
+        "warConfigObjectId": "0xe905ae93c67898302befef40ac48df85d0730e334984aeda5e0187cf79fce372",
+        "phaseObjectId": "0x2ce3259cc683396f7e9931975fa5114df6a75556ccb4f20506991aff6b37e9fe",
+        "systemConfigObjectId": "0x4486a67dae52d1fa24041568246a7b8320a63d5cef82e31256b4ee596edfa5e1",
+        "warConfigVersion": 1,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": null,
+        "topScore": 0,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [],
+      "explanation": {
+        "pointsPerTick": 1,
+        "allowedAssemblyFamilies": [],
+        "allowedAssemblyTypeIds": [
+          88092
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    }
+  ],
+  "scoreboard": {
+    "tick": 10,
+    "timestamp": 1773801900000,
+    "tribeScores": [
+      {
+        "id": 98000423,
+        "name": "PEACEFUL TRADE EMPIRE",
+        "color": "var(--tribe-a)",
+        "points": 2
+      }
+    ]
+  },
+  "inputs": {
+    "candidateCollection": {
+      "mode": "graphql_per_tick_primary",
+      "path": "",
+      "objectCount": 0
+    },
+    "activeSystems": {
+      "mode": "scenario_phase_bootstrap",
+      "detail": "Opening Front"
+    },
+    "ownerResolution": {
+      "mode": "graphql_ownercap_chain"
+    },
+    "locationResolution": {
+      "mode": "live_system_field_or_bootstrap_manifest",
+      "path": null,
+      "objectCount": 0
+    }
+  },
+  "systems": [
+    {
+      "systemId": 30000005,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 13,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773801900000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "pointsAwarded": [],
+        "config": {
+          "warConfigObjectId": "0xe905ae93c67898302befef40ac48df85d0730e334984aeda5e0187cf79fce372",
+          "phaseObjectId": "0x2ce3259cc683396f7e9931975fa5114df6a75556ccb4f20506991aff6b37e9fe",
+          "systemConfigObjectId": "0x4486a67dae52d1fa24041568246a7b8320a63d5cef82e31256b4ee596edfa5e1",
+          "warConfigVersion": 1,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": null,
+          "topScore": 0,
+          "secondTribeId": null,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [],
+        "explanation": {
+          "pointsPerTick": 1,
+          "allowedAssemblyFamilies": [],
+          "allowedAssemblyTypeIds": [
+            88092
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 13,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773801900000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "pointsAwarded": 0,
+        "snapshotHash": "0x841ccdfbd6ea404c4ec5a4aaaa1c25333071261ea23e5e8f1dc65919cfe1fb96"
+      },
+      "resolution": {
+        "warId": 13,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773801900000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "topTribeId": null,
+        "topScore": 0,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1,
+        "pointsAwarded": 0
+      },
+      "presenceRows": [],
+      "candidateAssemblies": [],
+      "editorialDisplay": null
+    }
+  ],
+  "receiptPath": "audit/latest/receipts/1773801900000.json"
+}

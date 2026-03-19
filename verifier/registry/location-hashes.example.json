@@ -1,0 +1,16 @@
+{
+  "locations": [
+    {
+      "locationHashHex": "0xreplace_with_published_location_hash",
+      "systemId": 3001,
+      "systemName": "Ashfall Depot",
+      "note": "Temporary bootstrap until the assembly publishes systemId directly on-chain."
+    },
+    {
+      "locationHashHex": "0xreplace_with_other_published_location_hash",
+      "systemId": 3002,
+      "systemName": "Sable Gate",
+      "note": "Used only when live objects expose location_hash but not systemId."
+    }
+  ]
+}

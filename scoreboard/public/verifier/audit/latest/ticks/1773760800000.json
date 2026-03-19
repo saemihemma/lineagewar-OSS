@@ -1,0 +1,717 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773760838871,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "live-chain",
+  "tickTimestampMs": 1773760800000,
+  "warId": 12,
+  "tickPlan": [
+    {
+      "tickTimestampMs": 1773760800000,
+      "systemId": 30000005
+    },
+    {
+      "tickTimestampMs": 1773760800000,
+      "systemId": 30013466
+    },
+    {
+      "tickTimestampMs": 1773760800000,
+      "systemId": 30016320
+    }
+  ],
+  "commitments": [
+    {
+      "warId": 12,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773760800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 98000423,
+      "pointsAwarded": 3,
+      "snapshotHash": "0x0b659466456bf2b1018d41ad84a098b9a423805ac7acfe19f78be545cd0a7f2f"
+    },
+    {
+      "warId": 12,
+      "systemId": 30013466,
+      "tickTimestampMs": 1773760800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 1000167,
+      "pointsAwarded": 4,
+      "snapshotHash": "0xe3fb0f88d70ae7f770614bc0591ef3d83b377203943a3466d7c1d2e86c0ea3c9"
+    },
+    {
+      "warId": 12,
+      "systemId": 30016320,
+      "tickTimestampMs": 1773760800000,
+      "state": "NEUTRAL",
+      "controllerTribeId": null,
+      "pointsAwarded": 0,
+      "snapshotHash": "0x79f47204679c1e3a0a2f9cd546f9b86f0678a21900013ab1c41abc4dceb26d1c"
+    }
+  ],
+  "snapshots": [
+    {
+      "snapshotVersion": 1,
+      "warId": 12,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773760800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 98000423,
+      "pointsAwarded": [
+        {
+          "tribeId": 98000423,
+          "points": 3
+        }
+      ],
+      "config": {
+        "warConfigObjectId": "0x97d09ff55e50c30929fb0d8e29cb639115ec67669c0c368ef0613a87aa98a033",
+        "phaseObjectId": "0x8a65ef3c8cc819b3d5fc6185b978a2dfbb6fcf968f91067ef07318633ebe66d3",
+        "systemConfigObjectId": "0x0768069a755596d7511a57f250edf9020cb9f20c5a11cb9bd5e2f5cf78872778",
+        "warConfigVersion": 2,
+        "phaseId": 2,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 98000423,
+        "topScore": 1,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 98000423,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 3,
+        "allowedAssemblyFamilies": [],
+        "allowedAssemblyTypeIds": [
+          88092
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 12,
+      "systemId": 30013466,
+      "tickTimestampMs": 1773760800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 1000167,
+      "pointsAwarded": [
+        {
+          "tribeId": 1000167,
+          "points": 4
+        }
+      ],
+      "config": {
+        "warConfigObjectId": "0x97d09ff55e50c30929fb0d8e29cb639115ec67669c0c368ef0613a87aa98a033",
+        "phaseObjectId": "0x8a65ef3c8cc819b3d5fc6185b978a2dfbb6fcf968f91067ef07318633ebe66d3",
+        "systemConfigObjectId": "0x9a35b540442424533f6d8e4f699c134ff078904333c672f5823ad8e0f5937e83",
+        "warConfigVersion": 2,
+        "phaseId": 2,
+        "systemConfigVersion": 2
+      },
+      "resolution": {
+        "topTribeId": 1000167,
+        "topScore": 3,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 1000167,
+          "presenceScore": 3,
+          "qualifyingAssemblyCount": 3
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 4,
+        "allowedAssemblyFamilies": [
+          "other",
+          "smart_storage_unit"
+        ],
+        "allowedAssemblyTypeIds": [],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 12,
+      "systemId": 30016320,
+      "tickTimestampMs": 1773760800000,
+      "state": "NEUTRAL",
+      "controllerTribeId": null,
+      "pointsAwarded": [],
+      "config": {
+        "warConfigObjectId": "0x97d09ff55e50c30929fb0d8e29cb639115ec67669c0c368ef0613a87aa98a033",
+        "phaseObjectId": "0x8a65ef3c8cc819b3d5fc6185b978a2dfbb6fcf968f91067ef07318633ebe66d3",
+        "systemConfigObjectId": "0x67973dafbd0a22ce9be5b1fbb6dfcdbd036825f8e0d167a9706b4d908464734f",
+        "warConfigVersion": 2,
+        "phaseId": 2,
+        "systemConfigVersion": 2
+      },
+      "resolution": {
+        "topTribeId": 1000167,
+        "topScore": 0,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 1000167,
+          "presenceScore": 0,
+          "qualifyingAssemblyCount": 0
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 2,
+        "allowedAssemblyFamilies": [
+          "smart_storage_unit"
+        ],
+        "allowedAssemblyTypeIds": [],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    }
+  ],
+  "scoreboard": {
+    "tick": 39,
+    "timestamp": 1773760800000,
+    "tribeScores": [
+      {
+        "id": 1000167,
+        "name": "Tribe 1000167",
+        "color": "var(--tribe-a)",
+        "points": 32
+      },
+      {
+        "id": 98000423,
+        "name": "PEACEFUL TRADE EMPIRE",
+        "color": "var(--tribe-b)",
+        "points": 117
+      }
+    ]
+  },
+  "inputs": {
+    "candidateCollection": {
+      "mode": "graphql_per_tick_primary",
+      "path": "",
+      "objectCount": 7
+    },
+    "activeSystems": {
+      "mode": "scenario_phase_bootstrap",
+      "detail": "Opening Front"
+    },
+    "ownerResolution": {
+      "mode": "graphql_ownercap_chain"
+    },
+    "locationResolution": {
+      "mode": "live_system_field_or_bootstrap_manifest",
+      "path": null,
+      "objectCount": 7
+    }
+  },
+  "systems": [
+    {
+      "systemId": 30000005,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773760800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 98000423,
+        "pointsAwarded": [
+          {
+            "tribeId": 98000423,
+            "points": 3
+          }
+        ],
+        "config": {
+          "warConfigObjectId": "0x97d09ff55e50c30929fb0d8e29cb639115ec67669c0c368ef0613a87aa98a033",
+          "phaseObjectId": "0x8a65ef3c8cc819b3d5fc6185b978a2dfbb6fcf968f91067ef07318633ebe66d3",
+          "systemConfigObjectId": "0x0768069a755596d7511a57f250edf9020cb9f20c5a11cb9bd5e2f5cf78872778",
+          "warConfigVersion": 2,
+          "phaseId": 2,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 98000423,
+          "topScore": 1,
+          "secondTribeId": null,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 98000423,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 3,
+          "allowedAssemblyFamilies": [],
+          "allowedAssemblyTypeIds": [
+            88092
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773760800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 98000423,
+        "pointsAwarded": 3,
+        "snapshotHash": "0x0b659466456bf2b1018d41ad84a098b9a423805ac7acfe19f78be545cd0a7f2f"
+      },
+      "resolution": {
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773760800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 98000423,
+        "topTribeId": 98000423,
+        "topScore": 1,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1,
+        "pointsAwarded": 3
+      },
+      "presenceRows": [
+        {
+          "warId": 12,
+          "systemId": 30000005,
+          "tickTimestampMs": 1773760800000,
+          "tribeId": 98000423,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1,
+          "assemblies": [
+            {
+              "assemblyId": "0xe8c13a707b0bd025b69cbea6021b94b02debfa5fa3c3b654d838f3f9a99385da",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88092,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "presenceWeight": 1,
+              "matchedRuleIndex": 0,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0xe8c13a707b0bd025b69cbea6021b94b02debfa5fa3c3b654d838f3f9a99385da",
+          "systemId": 30000005,
+          "ownerCharacterId": "0xe2f74f79f8e4349e8c1953fd6e45f09277691ced072b786920a92c11e0a51382",
+          "tribeId": 98000423,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88092,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        }
+      ],
+      "editorialDisplay": null
+    },
+    {
+      "systemId": 30013466,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 12,
+        "systemId": 30013466,
+        "tickTimestampMs": 1773760800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 1000167,
+        "pointsAwarded": [
+          {
+            "tribeId": 1000167,
+            "points": 4
+          }
+        ],
+        "config": {
+          "warConfigObjectId": "0x97d09ff55e50c30929fb0d8e29cb639115ec67669c0c368ef0613a87aa98a033",
+          "phaseObjectId": "0x8a65ef3c8cc819b3d5fc6185b978a2dfbb6fcf968f91067ef07318633ebe66d3",
+          "systemConfigObjectId": "0x9a35b540442424533f6d8e4f699c134ff078904333c672f5823ad8e0f5937e83",
+          "warConfigVersion": 2,
+          "phaseId": 2,
+          "systemConfigVersion": 2
+        },
+        "resolution": {
+          "topTribeId": 1000167,
+          "topScore": 3,
+          "secondTribeId": null,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 1000167,
+            "presenceScore": 3,
+            "qualifyingAssemblyCount": 3
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 4,
+          "allowedAssemblyFamilies": [
+            "other",
+            "smart_storage_unit"
+          ],
+          "allowedAssemblyTypeIds": [],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 12,
+        "systemId": 30013466,
+        "tickTimestampMs": 1773760800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 1000167,
+        "pointsAwarded": 4,
+        "snapshotHash": "0xe3fb0f88d70ae7f770614bc0591ef3d83b377203943a3466d7c1d2e86c0ea3c9"
+      },
+      "resolution": {
+        "warId": 12,
+        "systemId": 30013466,
+        "tickTimestampMs": 1773760800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 1000167,
+        "topTribeId": 1000167,
+        "topScore": 3,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1,
+        "pointsAwarded": 4
+      },
+      "presenceRows": [
+        {
+          "warId": 12,
+          "systemId": 30013466,
+          "tickTimestampMs": 1773760800000,
+          "tribeId": 1000167,
+          "presenceScore": 3,
+          "qualifyingAssemblyCount": 3,
+          "assemblies": [
+            {
+              "assemblyId": "0x3a8c5f64fac7f94de309c4ffbeb8838f9cc2a9d11c3d08cbe95e44cd77ad7d54",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 90184,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "presenceWeight": 1,
+              "matchedRuleIndex": 1,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0x5f1433abdfc0aaa9f1862e534ed7e3611bd175b3c529096debf9a7623e973915",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88068,
+              "status": "OFFLINE",
+              "countsForPresence": false,
+              "presenceWeight": 0,
+              "matchedRuleIndex": null,
+              "storageRulePassed": false,
+              "excludedReason": "assembly_not_online"
+            },
+            {
+              "assemblyId": "0x685b6be625fd6a9355f3250c20a839e150426cec928fa181dde25785574a1f2f",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88063,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "presenceWeight": 1,
+              "matchedRuleIndex": 1,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0xf730d0e7f1ba2900d74d760de5775181dea8386c3e98efe3e586b56f145bbcaf",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88092,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "presenceWeight": 1,
+              "matchedRuleIndex": 1,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0x685b6be625fd6a9355f3250c20a839e150426cec928fa181dde25785574a1f2f",
+          "systemId": 30013466,
+          "ownerCharacterId": "0x4ecb41060f11c68243f07d6152f5695d16296afa01af7723821c2a98d2c147d2",
+          "tribeId": 1000167,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88063,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        },
+        {
+          "assemblyId": "0x3a8c5f64fac7f94de309c4ffbeb8838f9cc2a9d11c3d08cbe95e44cd77ad7d54",
+          "systemId": 30013466,
+          "ownerCharacterId": "0x4ecb41060f11c68243f07d6152f5695d16296afa01af7723821c2a98d2c147d2",
+          "tribeId": 1000167,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 90184,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        },
+        {
+          "assemblyId": "0x5f1433abdfc0aaa9f1862e534ed7e3611bd175b3c529096debf9a7623e973915",
+          "systemId": 30013466,
+          "ownerCharacterId": "0x4ecb41060f11c68243f07d6152f5695d16296afa01af7723821c2a98d2c147d2",
+          "tribeId": 1000167,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88068,
+          "storageTypeId": null,
+          "status": "OFFLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        },
+        {
+          "assemblyId": "0xf730d0e7f1ba2900d74d760de5775181dea8386c3e98efe3e586b56f145bbcaf",
+          "systemId": 30013466,
+          "ownerCharacterId": "0x4ecb41060f11c68243f07d6152f5695d16296afa01af7723821c2a98d2c147d2",
+          "tribeId": 1000167,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88092,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        }
+      ],
+      "editorialDisplay": null
+    },
+    {
+      "systemId": 30016320,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 12,
+        "systemId": 30016320,
+        "tickTimestampMs": 1773760800000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "pointsAwarded": [],
+        "config": {
+          "warConfigObjectId": "0x97d09ff55e50c30929fb0d8e29cb639115ec67669c0c368ef0613a87aa98a033",
+          "phaseObjectId": "0x8a65ef3c8cc819b3d5fc6185b978a2dfbb6fcf968f91067ef07318633ebe66d3",
+          "systemConfigObjectId": "0x67973dafbd0a22ce9be5b1fbb6dfcdbd036825f8e0d167a9706b4d908464734f",
+          "warConfigVersion": 2,
+          "phaseId": 2,
+          "systemConfigVersion": 2
+        },
+        "resolution": {
+          "topTribeId": 1000167,
+          "topScore": 0,
+          "secondTribeId": null,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 1000167,
+            "presenceScore": 0,
+            "qualifyingAssemblyCount": 0
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 2,
+          "allowedAssemblyFamilies": [
+            "smart_storage_unit"
+          ],
+          "allowedAssemblyTypeIds": [],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 12,
+        "systemId": 30016320,
+        "tickTimestampMs": 1773760800000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "pointsAwarded": 0,
+        "snapshotHash": "0x79f47204679c1e3a0a2f9cd546f9b86f0678a21900013ab1c41abc4dceb26d1c"
+      },
+      "resolution": {
+        "warId": 12,
+        "systemId": 30016320,
+        "tickTimestampMs": 1773760800000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "topTribeId": 1000167,
+        "topScore": 0,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1,
+        "pointsAwarded": 0
+      },
+      "presenceRows": [
+        {
+          "warId": 12,
+          "systemId": 30016320,
+          "tickTimestampMs": 1773760800000,
+          "tribeId": 1000167,
+          "presenceScore": 0,
+          "qualifyingAssemblyCount": 0,
+          "assemblies": [
+            {
+              "assemblyId": "0x9fdd4fc516c03625bd21893f9e740b79469536fa6fe7940aded6a97abed24d91",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88092,
+              "status": "ONLINE",
+              "countsForPresence": false,
+              "presenceWeight": 0,
+              "matchedRuleIndex": null,
+              "storageRulePassed": false,
+              "excludedReason": "no_assembly_rule_matched"
+            },
+            {
+              "assemblyId": "0xe8cd90f71c83f98845f77b127ec41eaf6f8a3463e6d8027b213e9d708c4f50af",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88063,
+              "status": "ONLINE",
+              "countsForPresence": false,
+              "presenceWeight": 0,
+              "matchedRuleIndex": null,
+              "storageRulePassed": false,
+              "excludedReason": "no_assembly_rule_matched"
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0x9fdd4fc516c03625bd21893f9e740b79469536fa6fe7940aded6a97abed24d91",
+          "systemId": 30016320,
+          "ownerCharacterId": "0xaaf3a69bee4b4cdeb024b6609cda95c817e2a1597ae27017617a28ef266914d4",
+          "tribeId": 1000167,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88092,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        },
+        {
+          "assemblyId": "0xe8cd90f71c83f98845f77b127ec41eaf6f8a3463e6d8027b213e9d708c4f50af",
+          "systemId": 30016320,
+          "ownerCharacterId": "0xaaf3a69bee4b4cdeb024b6609cda95c817e2a1597ae27017617a28ef266914d4",
+          "tribeId": 1000167,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88063,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        }
+      ],
+      "editorialDisplay": null
+    }
+  ],
+  "receiptPath": "audit/latest/receipts/1773760800000.json"
+}

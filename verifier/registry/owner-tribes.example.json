@@ -1,0 +1,25 @@
+{
+  "participatingTribeIds": [100, 200],
+  "tribes": [
+    {
+      "tribeId": 100,
+      "name": "Tribe Red"
+    },
+    {
+      "tribeId": 200,
+      "name": "Tribe Blue"
+    }
+  ],
+  "owners": [
+    {
+      "ownerCharacterId": "0xreplace_with_red_owner_character_id",
+      "ownerCharacterAddress": "0xreplace_with_red_character_address",
+      "tribeId": 100
+    },
+    {
+      "ownerCharacterId": "0xreplace_with_blue_owner_character_id",
+      "ownerCharacterAddress": "0xreplace_with_blue_character_address",
+      "tribeId": 200
+    }
+  ]
+}

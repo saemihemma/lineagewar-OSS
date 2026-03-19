@@ -1,0 +1,30 @@
+module lineage_war::errors;
+
+#[error(code = 0)]
+const EInvalidWarId: vector<u8> = b"War id must be non-zero";
+#[error(code = 1)]
+const EInvalidSystemId: vector<u8> = b"System id must be non-zero";
+#[error(code = 2)]
+const EInvalidPhaseId: vector<u8> = b"Phase id must be non-zero";
+#[error(code = 3)]
+const EInvalidVersion: vector<u8> = b"Version must be non-zero";
+#[error(code = 4)]
+const EInvalidTickMinutes: vector<u8> = b"Tick minutes must be non-zero";
+#[error(code = 5)]
+const EInvalidPoints: vector<u8> = b"Points must be non-zero";
+#[error(code = 6)]
+const EInvalidSourceOfTruthMode: vector<u8> = b"Invalid source of truth mode";
+#[error(code = 7)]
+const EInvalidAssemblyFamily: vector<u8> = b"Invalid assembly family";
+#[error(code = 8)]
+const EInvalidStorageRequirementMode: vector<u8> = b"Invalid storage requirement mode";
+#[error(code = 9)]
+const EInvalidControlState: vector<u8> = b"Invalid control state";
+#[error(code = 10)]
+const EInvalidTargetKind: vector<u8> = b"Invalid target kind";
+#[error(code = 11)]
+const EAdminCapMismatch: vector<u8> = b"Admin cap does not match war";
+#[error(code = 12)]
+const EInvalidEffectiveRange: vector<u8> = b"Invalid effective time range";
+#[error(code = 13)]
+const EChangeAlreadyCancelled: vector<u8> = b"Scheduled change is already cancelled";

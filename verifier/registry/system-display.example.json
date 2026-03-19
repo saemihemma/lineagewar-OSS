@@ -1,0 +1,19 @@
+{
+  "systems": [
+    {
+      "systemId": "30020691",
+      "displayName": "",
+      "publicRuleText": "Control requires an online smart storage unit containing at least one Synthetic Mining Lens."
+    },
+    {
+      "systemId": "30017227",
+      "displayName": "",
+      "publicRuleText": "Only online smart gates count toward control in this system."
+    },
+    {
+      "systemId": "30005277",
+      "displayName": "",
+      "publicRuleText": "Online smart gates and smart storage units count equally toward control in this system."
+    }
+  ]
+}

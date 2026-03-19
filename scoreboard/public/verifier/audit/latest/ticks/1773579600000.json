@@ -1,0 +1,154 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773711814358,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "live-chain",
+  "tickTimestampMs": 1773579600000,
+  "warId": 12,
+  "tickPlan": [
+    {
+      "tickTimestampMs": 1773579600000,
+      "systemId": 30000005
+    }
+  ],
+  "commitments": [
+    {
+      "warId": 12,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773579600000,
+      "state": "NEUTRAL",
+      "controllerTribeId": null,
+      "pointsAwarded": 0,
+      "snapshotHash": "0x08bf710d8ad67d340efb240afdeb2b94e3e340dea20918f986367eadd3ef7da5"
+    }
+  ],
+  "snapshots": [
+    {
+      "snapshotVersion": 1,
+      "warId": 12,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773579600000,
+      "state": "NEUTRAL",
+      "controllerTribeId": null,
+      "pointsAwarded": [],
+      "config": {
+        "phaseObjectId": null,
+        "systemConfigObjectId": "0x4de065480a3a2762b713429373566a854814c223de2c1ee994adf1013ecd713c",
+        "warConfigVersion": 1,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": null,
+        "topScore": 0,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [],
+      "explanation": {
+        "pointsPerTick": 1,
+        "allowedAssemblyFamilies": [],
+        "allowedAssemblyTypeIds": [
+          88092
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    }
+  ],
+  "scoreboard": {
+    "tick": 12,
+    "timestamp": 1773579600000,
+    "tribeScores": []
+  },
+  "inputs": {
+    "candidateCollection": {
+      "mode": "graphql_per_tick_primary",
+      "path": "",
+      "objectCount": 1
+    },
+    "activeSystems": {
+      "mode": "scenario_phase_bootstrap",
+      "detail": "Opening Front"
+    },
+    "ownerResolution": {
+      "mode": "graphql_ownercap_chain"
+    },
+    "locationResolution": {
+      "mode": "live_system_field_or_bootstrap_manifest",
+      "path": null,
+      "objectCount": 1
+    }
+  },
+  "systems": [
+    {
+      "systemId": 30000005,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773579600000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "pointsAwarded": [],
+        "config": {
+          "phaseObjectId": null,
+          "systemConfigObjectId": "0x4de065480a3a2762b713429373566a854814c223de2c1ee994adf1013ecd713c",
+          "warConfigVersion": 1,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": null,
+          "topScore": 0,
+          "secondTribeId": null,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [],
+        "explanation": {
+          "pointsPerTick": 1,
+          "allowedAssemblyFamilies": [],
+          "allowedAssemblyTypeIds": [
+            88092
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773579600000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "pointsAwarded": 0,
+        "snapshotHash": "0x08bf710d8ad67d340efb240afdeb2b94e3e340dea20918f986367eadd3ef7da5"
+      },
+      "resolution": {
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773579600000,
+        "state": "NEUTRAL",
+        "controllerTribeId": null,
+        "topTribeId": null,
+        "topScore": 0,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1,
+        "pointsAwarded": 0
+      },
+      "presenceRows": [],
+      "candidateAssemblies": [],
+      "editorialDisplay": null
+    }
+  ],
+  "receiptPath": "audit/latest/receipts/1773579600000.json"
+}

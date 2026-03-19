@@ -1,0 +1,632 @@
+{
+  "config": {
+    "warId": 1,
+    "tickStartMs": 1773064800000,
+    "tickCount": 2,
+    "outputJson": false,
+    "source": "registry",
+    "scenario": "two-tribe-two-system",
+    "outputPath": "./out/testnet-registry.json",
+    "chain": {
+      "rpcUrl": "https://fullnode.testnet.sui.io:443",
+      "warRegistryId": "0xebc94b443bcdea37772a17088d02e4d8f9f9152963a117d2cc77104a10e28312",
+      "warConfigIds": [
+        "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae"
+      ],
+      "phaseConfigIds": [
+        "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45"
+      ],
+      "systemConfigIds": [
+        "0x8cd2e8fb46dafc2b1230768dafcc952fc0c066b1261365447dbc775c27d88e5e",
+        "0x825446f24856694a88caf536fcea287c0d5fccdc6a617e4806277ad426abcccd"
+      ],
+      "activeSystemIds": [
+        3001,
+        3002
+      ],
+      "participatingTribeIds": [
+        100,
+        200
+      ],
+      "packageId": "0xa709a5f190e3749fcafbc34b84a674b46891981c90a894cdc022a04172563f49",
+      "adminCapId": "0x493c9646ebb741b2856b4de2fc47a5da76bedc08907615e1b7d44c6e863bad15",
+      "assemblyRegistryPath": ".\\registry\\testnet-live-assemblies.json",
+      "assemblyObjectIds": [],
+      "ownerTribeRegistryPath": ".\\registry\\testnet-owner-tribes.json",
+      "locationMappingPath": null
+    }
+  },
+  "tickPlan": [
+    {
+      "tickTimestampMs": 1773064800000,
+      "systemId": 3001
+    },
+    {
+      "tickTimestampMs": 1773064800000,
+      "systemId": 3002
+    },
+    {
+      "tickTimestampMs": 1773068400000,
+      "systemId": 3001
+    },
+    {
+      "tickTimestampMs": 1773068400000,
+      "systemId": 3002
+    }
+  ],
+  "commitments": [
+    {
+      "warId": 1,
+      "systemId": 3001,
+      "tickTimestampMs": 1773064800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": 2,
+      "snapshotHash": "0x35c3c557b134bd8d4006ea255edaf1745b1788eb523d93f54b233141afd3b08c"
+    },
+    {
+      "warId": 1,
+      "systemId": 3002,
+      "tickTimestampMs": 1773064800000,
+      "state": "CONTESTED",
+      "controllerTribeId": null,
+      "pointsAwarded": 0,
+      "snapshotHash": "0x4d05d41e18c8d8e693154f1479244d7e20dbc5abfb8c2d2b971d2aa2430122ce"
+    },
+    {
+      "warId": 1,
+      "systemId": 3001,
+      "tickTimestampMs": 1773068400000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": 2,
+      "snapshotHash": "0x3c252b93d1beb733b346b33f57f5756d18b6147c844186c16964fbef1a8ab8f3"
+    },
+    {
+      "warId": 1,
+      "systemId": 3002,
+      "tickTimestampMs": 1773068400000,
+      "state": "CONTESTED",
+      "controllerTribeId": null,
+      "pointsAwarded": 0,
+      "snapshotHash": "0xeecabd3150257215004778dc07081fd3f8328c137fdc994cc2576be9249cd751"
+    }
+  ],
+  "snapshots": [
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 3001,
+      "tickTimestampMs": 1773064800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": [
+        {
+          "tribeId": 100,
+          "points": 2
+        }
+      ],
+      "config": {
+        "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+        "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+        "systemConfigObjectId": "0x8cd2e8fb46dafc2b1230768dafcc952fc0c066b1261365447dbc775c27d88e5e",
+        "warConfigVersion": 2,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 100,
+        "topScore": 1,
+        "secondTribeId": 200,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 0,
+          "qualifyingAssemblyCount": 0
+        }
+      ],
+      "explanation": {
+        "allowedAssemblyFamilies": [
+          "smart_storage_unit"
+        ],
+        "allowedAssemblyTypeIds": [
+          88082
+        ],
+        "allowedStorageTypeIds": [
+          88082
+        ],
+        "storageRequirementMode": "SPECIFIC_ITEMS",
+        "requiredItemTypeIds": [
+          446
+        ],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 3002,
+      "tickTimestampMs": 1773064800000,
+      "state": "CONTESTED",
+      "controllerTribeId": null,
+      "pointsAwarded": [],
+      "config": {
+        "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+        "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+        "systemConfigObjectId": "0x825446f24856694a88caf536fcea287c0d5fccdc6a617e4806277ad426abcccd",
+        "warConfigVersion": 2,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 100,
+        "topScore": 1,
+        "secondTribeId": 200,
+        "secondScore": 1,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        }
+      ],
+      "explanation": {
+        "allowedAssemblyFamilies": [
+          "smart_gate",
+          "smart_turret"
+        ],
+        "allowedAssemblyTypeIds": [
+          5555,
+          88086
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 3001,
+      "tickTimestampMs": 1773068400000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": [
+        {
+          "tribeId": 100,
+          "points": 2
+        }
+      ],
+      "config": {
+        "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+        "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+        "systemConfigObjectId": "0x8cd2e8fb46dafc2b1230768dafcc952fc0c066b1261365447dbc775c27d88e5e",
+        "warConfigVersion": 2,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 100,
+        "topScore": 1,
+        "secondTribeId": 200,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 0,
+          "qualifyingAssemblyCount": 0
+        }
+      ],
+      "explanation": {
+        "allowedAssemblyFamilies": [
+          "smart_storage_unit"
+        ],
+        "allowedAssemblyTypeIds": [
+          88082
+        ],
+        "allowedStorageTypeIds": [
+          88082
+        ],
+        "storageRequirementMode": "SPECIFIC_ITEMS",
+        "requiredItemTypeIds": [
+          446
+        ],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 3002,
+      "tickTimestampMs": 1773068400000,
+      "state": "CONTESTED",
+      "controllerTribeId": null,
+      "pointsAwarded": [],
+      "config": {
+        "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+        "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+        "systemConfigObjectId": "0x825446f24856694a88caf536fcea287c0d5fccdc6a617e4806277ad426abcccd",
+        "warConfigVersion": 2,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 100,
+        "topScore": 1,
+        "secondTribeId": 200,
+        "secondScore": 1,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        }
+      ],
+      "explanation": {
+        "allowedAssemblyFamilies": [
+          "smart_gate",
+          "smart_turret"
+        ],
+        "allowedAssemblyTypeIds": [
+          5555,
+          88086
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    }
+  ],
+  "scoreboard": {
+    "warName": "Lineage War - Hybrid Demo",
+    "lastTickMs": 1773068400000,
+    "tribeScores": [
+      {
+        "id": 100,
+        "name": "Tribe Red",
+        "points": 4,
+        "color": "var(--tribe-a)"
+      },
+      {
+        "id": 200,
+        "name": "Tribe Blue",
+        "points": 0,
+        "color": "var(--tribe-b)"
+      }
+    ],
+    "systems": [
+      {
+        "id": "3001",
+        "name": "Ashfall Depot",
+        "state": 2,
+        "controller": 100
+      },
+      {
+        "id": "3002",
+        "name": "Sable Gate",
+        "state": 1
+      }
+    ],
+    "chartData": [
+      {
+        "tick": 1,
+        "timestamp": 1773064800000,
+        "tribe_100": 2,
+        "tribe_200": 0
+      },
+      {
+        "tick": 2,
+        "timestamp": 1773068400000,
+        "tribe_100": 4,
+        "tribe_200": 0
+      }
+    ],
+    "chartSeries": [
+      {
+        "tribeId": 100,
+        "dataKey": "tribe_100",
+        "name": "Tribe Red",
+        "color": "var(--tribe-a)"
+      },
+      {
+        "tribeId": 200,
+        "dataKey": "tribe_200",
+        "name": "Tribe Blue",
+        "color": "var(--tribe-b)"
+      }
+    ],
+    "commitments": [
+      {
+        "warId": 1,
+        "systemId": 3001,
+        "tickTimestampMs": 1773064800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": 2,
+        "snapshotHash": "0x35c3c557b134bd8d4006ea255edaf1745b1788eb523d93f54b233141afd3b08c"
+      },
+      {
+        "warId": 1,
+        "systemId": 3002,
+        "tickTimestampMs": 1773064800000,
+        "state": "CONTESTED",
+        "controllerTribeId": null,
+        "pointsAwarded": 0,
+        "snapshotHash": "0x4d05d41e18c8d8e693154f1479244d7e20dbc5abfb8c2d2b971d2aa2430122ce"
+      },
+      {
+        "warId": 1,
+        "systemId": 3001,
+        "tickTimestampMs": 1773068400000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": 2,
+        "snapshotHash": "0x3c252b93d1beb733b346b33f57f5756d18b6147c844186c16964fbef1a8ab8f3"
+      },
+      {
+        "warId": 1,
+        "systemId": 3002,
+        "tickTimestampMs": 1773068400000,
+        "state": "CONTESTED",
+        "controllerTribeId": null,
+        "pointsAwarded": 0,
+        "snapshotHash": "0xeecabd3150257215004778dc07081fd3f8328c137fdc994cc2576be9249cd751"
+      }
+    ],
+    "snapshots": [
+      {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 3001,
+        "tickTimestampMs": 1773064800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": [
+          {
+            "tribeId": 100,
+            "points": 2
+          }
+        ],
+        "config": {
+          "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+          "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+          "systemConfigObjectId": "0x8cd2e8fb46dafc2b1230768dafcc952fc0c066b1261365447dbc775c27d88e5e",
+          "warConfigVersion": 2,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 100,
+          "topScore": 1,
+          "secondTribeId": 200,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 0,
+            "qualifyingAssemblyCount": 0
+          }
+        ],
+        "explanation": {
+          "allowedAssemblyFamilies": [
+            "smart_storage_unit"
+          ],
+          "allowedAssemblyTypeIds": [
+            88082
+          ],
+          "allowedStorageTypeIds": [
+            88082
+          ],
+          "storageRequirementMode": "SPECIFIC_ITEMS",
+          "requiredItemTypeIds": [
+            446
+          ],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 3002,
+        "tickTimestampMs": 1773064800000,
+        "state": "CONTESTED",
+        "controllerTribeId": null,
+        "pointsAwarded": [],
+        "config": {
+          "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+          "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+          "systemConfigObjectId": "0x825446f24856694a88caf536fcea287c0d5fccdc6a617e4806277ad426abcccd",
+          "warConfigVersion": 2,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 100,
+          "topScore": 1,
+          "secondTribeId": 200,
+          "secondScore": 1,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          }
+        ],
+        "explanation": {
+          "allowedAssemblyFamilies": [
+            "smart_gate",
+            "smart_turret"
+          ],
+          "allowedAssemblyTypeIds": [
+            5555,
+            88086
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 3001,
+        "tickTimestampMs": 1773068400000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": [
+          {
+            "tribeId": 100,
+            "points": 2
+          }
+        ],
+        "config": {
+          "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+          "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+          "systemConfigObjectId": "0x8cd2e8fb46dafc2b1230768dafcc952fc0c066b1261365447dbc775c27d88e5e",
+          "warConfigVersion": 2,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 100,
+          "topScore": 1,
+          "secondTribeId": 200,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 0,
+            "qualifyingAssemblyCount": 0
+          }
+        ],
+        "explanation": {
+          "allowedAssemblyFamilies": [
+            "smart_storage_unit"
+          ],
+          "allowedAssemblyTypeIds": [
+            88082
+          ],
+          "allowedStorageTypeIds": [
+            88082
+          ],
+          "storageRequirementMode": "SPECIFIC_ITEMS",
+          "requiredItemTypeIds": [
+            446
+          ],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 3002,
+        "tickTimestampMs": 1773068400000,
+        "state": "CONTESTED",
+        "controllerTribeId": null,
+        "pointsAwarded": [],
+        "config": {
+          "warConfigObjectId": "0x5b26361dca6a60f7faf82290185530645b132a8685e861d693dcb832948856ae",
+          "phaseObjectId": "0xbb306e35f0f4fbb749067e40af6a6959dbc402a681c0d7d33e04bf46cf093c45",
+          "systemConfigObjectId": "0x825446f24856694a88caf536fcea287c0d5fccdc6a617e4806277ad426abcccd",
+          "warConfigVersion": 2,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 100,
+          "topScore": 1,
+          "secondTribeId": 200,
+          "secondScore": 1,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          }
+        ],
+        "explanation": {
+          "allowedAssemblyFamilies": [
+            "smart_gate",
+            "smart_turret"
+          ],
+          "allowedAssemblyTypeIds": [
+            5555,
+            88086
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,229 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773720933545,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "live-chain",
+  "tickTimestampMs": 1773720900000,
+  "warId": 12,
+  "tickPlan": [
+    {
+      "tickTimestampMs": 1773720900000,
+      "systemId": 30000005
+    }
+  ],
+  "commitments": [
+    {
+      "warId": 12,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773720900000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 98000423,
+      "pointsAwarded": 3,
+      "snapshotHash": "0x749fbfb20e7db5ad8f4b7f829b7e6e0688896d798978f55aefef4a75b65d0edd"
+    }
+  ],
+  "snapshots": [
+    {
+      "snapshotVersion": 1,
+      "warId": 12,
+      "systemId": 30000005,
+      "tickTimestampMs": 1773720900000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 98000423,
+      "pointsAwarded": [
+        {
+          "tribeId": 98000423,
+          "points": 3
+        }
+      ],
+      "config": {
+        "warConfigObjectId": "0x8b5e293ed62b1d504ea4acc4fe79fd78abe4d46e9c82e07d3996b1b4c55dd547",
+        "phaseObjectId": "0xd4e68d7af6971c88c0d9cf75ee75b5ed2cc8c806bac9b24c035bacf3206f5146",
+        "systemConfigObjectId": "0x0768069a755596d7511a57f250edf9020cb9f20c5a11cb9bd5e2f5cf78872778",
+        "warConfigVersion": 1,
+        "phaseId": 1,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 98000423,
+        "topScore": 1,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 98000423,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 3,
+        "allowedAssemblyFamilies": [],
+        "allowedAssemblyTypeIds": [
+          88092
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    }
+  ],
+  "scoreboard": {
+    "tick": 8,
+    "timestamp": 1773720900000,
+    "tribeScores": [
+      {
+        "id": 98000423,
+        "name": "PEACEFUL TRADE EMPIRE",
+        "color": "var(--tribe-a)",
+        "points": 24
+      }
+    ]
+  },
+  "inputs": {
+    "candidateCollection": {
+      "mode": "graphql_per_tick_primary",
+      "path": "",
+      "objectCount": 22
+    },
+    "activeSystems": {
+      "mode": "scenario_phase_bootstrap",
+      "detail": "Opening Front"
+    },
+    "ownerResolution": {
+      "mode": "graphql_ownercap_chain"
+    },
+    "locationResolution": {
+      "mode": "live_system_field_or_bootstrap_manifest",
+      "path": null,
+      "objectCount": 22
+    }
+  },
+  "systems": [
+    {
+      "systemId": 30000005,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773720900000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 98000423,
+        "pointsAwarded": [
+          {
+            "tribeId": 98000423,
+            "points": 3
+          }
+        ],
+        "config": {
+          "warConfigObjectId": "0x8b5e293ed62b1d504ea4acc4fe79fd78abe4d46e9c82e07d3996b1b4c55dd547",
+          "phaseObjectId": "0xd4e68d7af6971c88c0d9cf75ee75b5ed2cc8c806bac9b24c035bacf3206f5146",
+          "systemConfigObjectId": "0x0768069a755596d7511a57f250edf9020cb9f20c5a11cb9bd5e2f5cf78872778",
+          "warConfigVersion": 1,
+          "phaseId": 1,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 98000423,
+          "topScore": 1,
+          "secondTribeId": null,
+          "secondScore": 0,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 98000423,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 3,
+          "allowedAssemblyFamilies": [],
+          "allowedAssemblyTypeIds": [
+            88092
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773720900000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 98000423,
+        "pointsAwarded": 3,
+        "snapshotHash": "0x749fbfb20e7db5ad8f4b7f829b7e6e0688896d798978f55aefef4a75b65d0edd"
+      },
+      "resolution": {
+        "warId": 12,
+        "systemId": 30000005,
+        "tickTimestampMs": 1773720900000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 98000423,
+        "topTribeId": 98000423,
+        "topScore": 1,
+        "secondTribeId": null,
+        "secondScore": 0,
+        "requiredMargin": 1,
+        "pointsAwarded": 3
+      },
+      "presenceRows": [
+        {
+          "warId": 12,
+          "systemId": 30000005,
+          "tickTimestampMs": 1773720900000,
+          "tribeId": 98000423,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1,
+          "assemblies": [
+            {
+              "assemblyId": "0xe8c13a707b0bd025b69cbea6021b94b02debfa5fa3c3b654d838f3f9a99385da",
+              "assemblyFamily": "other",
+              "assemblyTypeId": 88092,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "presenceWeight": 1,
+              "matchedRuleIndex": 0,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0xe8c13a707b0bd025b69cbea6021b94b02debfa5fa3c3b654d838f3f9a99385da",
+          "systemId": 30000005,
+          "ownerCharacterId": "0xe2f74f79f8e4349e8c1953fd6e45f09277691ced072b786920a92c11e0a51382",
+          "tribeId": 98000423,
+          "assemblyFamily": "other",
+          "assemblyTypeId": 88092,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "graphql_live_object",
+            "systemSource": "assembly_system_mapping_manifest",
+            "ownerCharacterSource": "graphql_ownercap_chain",
+            "tribeSource": "graphql_character_tribe",
+            "assemblyMetadataSource": "graphql_live_fields",
+            "statusSource": "graphql_live_fields",
+            "inventorySource": "none",
+            "locationSource": "location_registry_event_manifest"
+          }
+        }
+      ],
+      "editorialDisplay": null
+    }
+  ],
+  "receiptPath": "audit/latest/receipts/1773720900000.json"
+}

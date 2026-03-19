@@ -1,0 +1,26 @@
+{
+  "assemblies": [
+    {
+      "objectId": "0xreplace_with_live_storage_object_id",
+      "seedKey": "storageUnit",
+      "bootstrapSystemId": 3001,
+      "bootstrapLocationHashHex": "0xreplace_with_published_location_hash",
+      "bootstrapOwnerCharacterId": "0xreplace_with_owner_character_id",
+      "bootstrapStatus": "ONLINE",
+      "bootstrapInventory": [
+        {
+          "itemTypeId": 446,
+          "quantity": 100
+        }
+      ]
+    },
+    {
+      "objectId": "0xreplace_with_live_gate_object_id",
+      "seedKey": "gate1",
+      "bootstrapSystemId": 3002,
+      "bootstrapLocationHashHex": "0xreplace_with_other_published_location_hash",
+      "bootstrapOwnerCharacterId": "0xreplace_with_other_owner_character_id",
+      "bootstrapStatus": "ONLINE"
+    }
+  ]
+}

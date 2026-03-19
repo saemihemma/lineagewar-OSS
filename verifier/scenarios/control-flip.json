@@ -1,0 +1,259 @@
+{
+  "name": "control-flip",
+  "warName": "Lineage War - Control Flip Demo",
+  "tribeNames": {
+    "100": "Tribe Red",
+    "200": "Tribe Blue"
+  },
+  "systemNames": {
+    "3001": "Ashfall Depot",
+    "3002": "Sable Gate"
+  },
+  "warConfig": {
+    "warId": 1,
+    "version": 3,
+    "defaultTickMinutes": 60,
+    "defaultPointsPerTick": 1,
+    "defaultTakeMargin": 1,
+    "defaultHoldMargin": 1,
+    "defaultNeutralMinTotalPresence": 1,
+    "defaultContestedWhenTied": true,
+    "sourceOfTruthMode": "PREFER_ON_CHAIN_FALLBACK_WORLD_API",
+    "effectiveFromMs": 0,
+    "effectiveUntilMs": null
+  },
+  "phase": {
+    "warId": 1,
+    "phaseId": 2,
+    "displayName": "Escalation Window",
+    "activeSystemIds": [3001, 3002],
+    "tickMinutesOverride": null,
+    "pointsMultiplierBps": 10000,
+    "effectiveFromMs": 0,
+    "effectiveUntilMs": null
+  },
+  "systems": [
+    {
+      "warId": 1,
+      "systemId": 3001,
+      "version": 2,
+      "enabled": true,
+      "pointsPerTick": 2,
+      "tickMinutesOverride": null,
+      "takeMargin": 1,
+      "holdMargin": 1,
+      "neutralMinTotalPresence": 1,
+      "contestedWhenTied": true,
+      "allowedAssemblyFamilies": ["smart_storage_unit"],
+      "allowedAssemblyTypeIds": [88082],
+      "allowedStorageTypeIds": [88082],
+      "storageRequirementMode": "SPECIFIC_ITEMS",
+      "requiredItemTypeIds": [446],
+      "minimumTotalItemCount": 0,
+      "effectiveFromMs": 0,
+      "effectiveUntilMs": null
+    },
+    {
+      "warId": 1,
+      "systemId": 3002,
+      "version": 2,
+      "enabled": true,
+      "pointsPerTick": 1,
+      "tickMinutesOverride": null,
+      "takeMargin": 1,
+      "holdMargin": 1,
+      "neutralMinTotalPresence": 1,
+      "contestedWhenTied": true,
+      "allowedAssemblyFamilies": ["smart_gate", "smart_turret"],
+      "allowedAssemblyTypeIds": [88086, 5555],
+      "allowedStorageTypeIds": [],
+      "storageRequirementMode": "NONE",
+      "requiredItemTypeIds": [],
+      "minimumTotalItemCount": 0,
+      "effectiveFromMs": 0,
+      "effectiveUntilMs": null
+    }
+  ],
+  "ticks": [
+    {
+      "tickOffset": 0,
+      "previousControllers": {
+        "3001": 100,
+        "3002": null
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 446, "quantity": 400 }]
+        },
+        {
+          "seedKey": "assembly",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    },
+    {
+      "tickOffset": 1,
+      "previousControllers": {
+        "3001": 100,
+        "3002": null
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 446, "quantity": 450 }]
+        },
+        {
+          "seedKey": "assembly",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    },
+    {
+      "tickOffset": 2,
+      "previousControllers": {
+        "3001": 200,
+        "3002": null
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 446, "quantity": 500 }]
+        },
+        {
+          "seedKey": "assembly",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "turret",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    },
+    {
+      "tickOffset": 3,
+      "previousControllers": {
+        "3001": 200,
+        "3002": 200
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 446, "quantity": 320 }]
+        },
+        {
+          "seedKey": "assembly",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3001,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "turret",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "systemId": 3002,
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "id": "b84abf81-6762-448f-8ecf-2481d3a9497a",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.submissions": {
+      "name": "submissions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "rider_name": {
+          "name": "rider_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "soul_record_filename": {
+          "name": "soul_record_filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "soul_record_content": {
+          "name": "soul_record_content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declared_utility": {
+          "name": "declared_utility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consent": {
+          "name": "consent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,0 +1,893 @@
+{
+  "name": "live-war",
+  "warName": "Lineage War - Three System Simulation",
+  "tribeNames": {
+    "100": "Tribe Red",
+    "200": "Tribe Blue"
+  },
+  "systemNames": {
+    "30020691": "30020691",
+    "30017227": "30017227",
+    "30005277": "30005277"
+  },
+  "warConfig": {
+    "warId": 1,
+    "version": 5,
+    "defaultTickMinutes": 15,
+    "defaultPointsPerTick": 1,
+    "defaultTakeMargin": 1,
+    "defaultHoldMargin": 1,
+    "defaultNeutralMinTotalPresence": 1,
+    "defaultContestedWhenTied": true,
+    "sourceOfTruthMode": "PREFER_ON_CHAIN_FALLBACK_WORLD_API",
+    "effectiveFromMs": 0,
+    "effectiveUntilMs": null
+  },
+  "phase": {
+    "warId": 1,
+    "phaseId": 3,
+    "displayName": "Live Simulation Window",
+    "activeSystemIds": [30020691, 30017227, 30005277],
+    "tickMinutesOverride": null,
+    "pointsMultiplierBps": 10000,
+    "effectiveFromMs": 0,
+    "effectiveUntilMs": null
+  },
+  "systems": [
+    {
+      "warId": 1,
+      "systemId": 30020691,
+      "version": 1,
+      "enabled": true,
+      "pointsPerTick": 1,
+      "tickMinutesOverride": null,
+      "takeMargin": 1,
+      "holdMargin": 1,
+      "neutralMinTotalPresence": 1,
+      "contestedWhenTied": true,
+      "allowedAssemblyFamilies": ["smart_storage_unit"],
+      "allowedAssemblyTypeIds": [88082],
+      "allowedStorageTypeIds": [88082],
+      "storageRequirementMode": "SPECIFIC_ITEMS",
+      "requiredItemTypeIds": [1000000038887],
+      "minimumTotalItemCount": 0,
+      "effectiveFromMs": 0,
+      "effectiveUntilMs": null
+    },
+    {
+      "warId": 1,
+      "systemId": 30017227,
+      "version": 1,
+      "enabled": true,
+      "pointsPerTick": 3,
+      "tickMinutesOverride": null,
+      "takeMargin": 1,
+      "holdMargin": 1,
+      "neutralMinTotalPresence": 1,
+      "contestedWhenTied": true,
+      "allowedAssemblyFamilies": ["smart_gate"],
+      "allowedAssemblyTypeIds": [88086],
+      "allowedStorageTypeIds": [],
+      "storageRequirementMode": "NONE",
+      "requiredItemTypeIds": [],
+      "minimumTotalItemCount": 0,
+      "effectiveFromMs": 0,
+      "effectiveUntilMs": null
+    },
+    {
+      "warId": 1,
+      "systemId": 30005277,
+      "version": 1,
+      "enabled": true,
+      "pointsPerTick": 5,
+      "tickMinutesOverride": null,
+      "takeMargin": 1,
+      "holdMargin": 1,
+      "neutralMinTotalPresence": 1,
+      "contestedWhenTied": true,
+      "allowedAssemblyFamilies": ["smart_gate", "smart_storage_unit"],
+      "allowedAssemblyTypeIds": [88082, 88086],
+      "allowedStorageTypeIds": [88082],
+      "storageRequirementMode": "NONE",
+      "requiredItemTypeIds": [],
+      "minimumTotalItemCount": 0,
+      "effectiveFromMs": 0,
+      "effectiveUntilMs": null
+    }
+  ],
+  "ticks": [
+    {
+      "tickOffset": 0,
+      "previousControllers": {
+        "30020691": 200,
+        "30017227": 100,
+        "30005277": 100
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit1",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 2 }]
+        },
+        {
+          "seedKey": "storageUnit2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "storageUnit3",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 3 }]
+        },
+        {
+          "seedKey": "storageUnit4",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "storageUnit5",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate3",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate4",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate5",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate6",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit6",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit7",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate7",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit8",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    },
+    {
+      "tickOffset": 1,
+      "previousControllers": {
+        "30020691": 200,
+        "30017227": 100,
+        "30005277": 100
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit1",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "storageUnit2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 2 }]
+        },
+        {
+          "seedKey": "storageUnit3",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit4",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "storageUnit5",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate3",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate4",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate5",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate6",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit6",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit7",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate7",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit8",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    },
+    {
+      "tickOffset": 2,
+      "previousControllers": {
+        "30020691": 200,
+        "30017227": 100,
+        "30005277": 100
+      },
+      "assemblies": [
+        {
+          "seedKey": "storageUnit1",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "storageUnit2",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "storageUnit3",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 2 }]
+        },
+        {
+          "seedKey": "storageUnit4",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit5",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30020691 },
+          "status": "ONLINE",
+          "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+        },
+        {
+          "seedKey": "gate1",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate2",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate3",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate4",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30017227 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate5",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate6",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit6",
+          "ownerCharacterKey": "characterA",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit7",
+          "ownerCharacterKey": "characterC",
+          "tribeId": 100,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "gate7",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        },
+        {
+          "seedKey": "storageUnit8",
+          "ownerCharacterKey": "characterB",
+          "tribeId": 200,
+          "publishedLocation": { "solarsystem": 30005277 },
+          "status": "ONLINE",
+          "inventory": []
+        }
+      ]
+    }
+  ],
+  "simulation": {
+    "emitIntervalSeconds": 60,
+    "initialHistoryTicks": 12,
+    "maxHistoryTicks": 90,
+    "templates": [
+      {
+        "id": "red-presses-two-fronts",
+        "displayName": "Tribe Red Holds Two Fronts",
+        "weightBps": 6000,
+        "previousControllers": {
+          "30020691": 200,
+          "30017227": 100,
+          "30005277": 100
+        },
+        "assemblies": [
+          {
+            "seedKey": "storageUnit1",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 2 }]
+          },
+          {
+            "seedKey": "storageUnit2",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "storageUnit3",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 3 }]
+          },
+          {
+            "seedKey": "storageUnit4",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "storageUnit5",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate1",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate2",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate3",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate4",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate5",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate6",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit6",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit7",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate7",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit8",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          }
+        ]
+      },
+      {
+        "id": "red-hold-tightens",
+        "displayName": "Tribe Red Tightens Hold",
+        "weightBps": 2500,
+        "previousControllers": {
+          "30020691": 200,
+          "30017227": 100,
+          "30005277": 100
+        },
+        "assemblies": [
+          {
+            "seedKey": "storageUnit1",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "storageUnit2",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 2 }]
+          },
+          {
+            "seedKey": "storageUnit3",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit4",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "storageUnit5",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate1",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate2",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate3",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate4",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate5",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate6",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit6",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit7",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate7",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit8",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          }
+        ]
+      },
+      {
+        "id": "red-pressure-peaks",
+        "displayName": "Tribe Red Pressure Peaks",
+        "weightBps": 1500,
+        "previousControllers": {
+          "30020691": 200,
+          "30017227": 100,
+          "30005277": 100
+        },
+        "assemblies": [
+          {
+            "seedKey": "storageUnit1",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "storageUnit2",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "storageUnit3",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 2 }]
+          },
+          {
+            "seedKey": "storageUnit4",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit5",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30020691 },
+            "status": "ONLINE",
+            "inventory": [{ "itemTypeId": 1000000038887, "quantity": 1 }]
+          },
+          {
+            "seedKey": "gate1",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate2",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate3",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate4",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30017227 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate5",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate6",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit6",
+            "ownerCharacterKey": "characterA",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit7",
+            "ownerCharacterKey": "characterC",
+            "tribeId": 100,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "gate7",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          },
+          {
+            "seedKey": "storageUnit8",
+            "ownerCharacterKey": "characterB",
+            "tribeId": 200,
+            "publishedLocation": { "solarsystem": 30005277 },
+            "status": "ONLINE",
+            "inventory": []
+          }
+        ]
+      }
+    ]
+  }
+}

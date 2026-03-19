@@ -1,0 +1,68 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773842433244,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "live-chain",
+  "latestTickMs": 1773840600000,
+  "availableTicks": [
+    {
+      "tickTimestampMs": 1773834300000,
+      "path": "ticks/1773834300000.json",
+      "receiptPath": "receipts/1773834300000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773835200000,
+      "path": "ticks/1773835200000.json",
+      "receiptPath": "receipts/1773835200000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773836100000,
+      "path": "ticks/1773836100000.json",
+      "receiptPath": "receipts/1773836100000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773837000000,
+      "path": "ticks/1773837000000.json",
+      "receiptPath": "receipts/1773837000000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773837900000,
+      "path": "ticks/1773837900000.json",
+      "receiptPath": "receipts/1773837900000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773838800000,
+      "path": "ticks/1773838800000.json",
+      "receiptPath": "receipts/1773838800000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773839700000,
+      "path": "ticks/1773839700000.json",
+      "receiptPath": "receipts/1773839700000.json",
+      "systemCount": 1
+    },
+    {
+      "tickTimestampMs": 1773840600000,
+      "path": "ticks/1773840600000.json",
+      "receiptPath": "receipts/1773840600000.json",
+      "systemCount": 2
+    }
+  ],
+  "trackedSystems": [
+    {
+      "id": "30000005",
+      "name": "30000005"
+    },
+    {
+      "id": "30013466",
+      "name": "30013466"
+    }
+  ],
+  "latestPath": "ticks/1773840600000.json"
+}

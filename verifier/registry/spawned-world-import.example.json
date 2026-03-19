@@ -1,0 +1,51 @@
+{
+  "participatingTribeIds": [100, 200],
+  "tribes": [
+    {
+      "tribeId": 100,
+      "name": "Tribe Red"
+    },
+    {
+      "tribeId": 200,
+      "name": "Tribe Blue"
+    }
+  ],
+  "owners": [
+    {
+      "ownerCharacterKey": "characterA",
+      "tribeId": 100,
+      "ownerCharacterAddress": "0xreplace_with_player_a_address"
+    },
+    {
+      "ownerCharacterKey": "characterB",
+      "tribeId": 200,
+      "ownerCharacterAddress": "0xreplace_with_player_b_address"
+    }
+  ],
+  "assemblies": [
+    {
+      "seedKey": "storageUnit",
+      "ownerCharacterKey": "characterA",
+      "systemId": 30020691,
+      "status": "ONLINE",
+      "inventory": [
+        {
+          "itemTypeId": 1000000038887,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "seedKey": "gate1",
+      "ownerCharacterKey": "characterA",
+      "systemId": 30017227,
+      "status": "ONLINE"
+    },
+    {
+      "seedKey": "gate2",
+      "ownerCharacterKey": "characterB",
+      "systemId": 30005277,
+      "status": "ONLINE"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-03-11T00:00:00.000Z",
+  "worldApiBase": "https://world-api-stillness.live.tech.evefrontier.com",
+  "systems": [
+    {
+      "systemId": 30020691,
+      "systemName": "Example System Name",
+      "source": "world_api"
+    },
+    {
+      "systemId": 30017227,
+      "systemName": "30017227",
+      "source": "fallback_id"
+    }
+  ]
+}

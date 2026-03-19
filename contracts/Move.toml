@@ -1,0 +1,9 @@
+[package]
+name = "lineage_war"
+edition = "2024"
+
+[dependencies]
+world = { local = "../../repos/world-contracts/contracts/world" }
+
+[addresses]
+lineage_war = "0x0"

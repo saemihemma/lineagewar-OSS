@@ -1,0 +1,165 @@
+{
+  "id": "d9a4acff-e42c-44b1-848a-3a58ec9b2980",
+  "prevId": "ae710ab9-1f61-49c0-9584-99231306d056",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.submissions": {
+      "name": "submissions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "rider_name": {
+          "name": "rider_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "soul_record_filename": {
+          "name": "soul_record_filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "soul_record_content": {
+          "name": "soul_record_content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "declared_utility": {
+          "name": "declared_utility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consent": {
+          "name": "consent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.war_activation": {
+      "name": "war_activation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "'singleton'"
+        },
+        "phase": {
+          "name": "phase",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pre_tribes'"
+        },
+        "tribe_a_name": {
+          "name": "tribe_a_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tribe_a_id": {
+          "name": "tribe_a_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tribe_a_captain_name": {
+          "name": "tribe_a_captain_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tribe_b_name": {
+          "name": "tribe_b_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tribe_b_id": {
+          "name": "tribe_b_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tribe_b_captain_name": {
+          "name": "tribe_b_captain_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activated_at": {
+          "name": "activated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "both_tribes_ready_at": {
+          "name": "both_tribes_ready_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

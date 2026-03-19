@@ -1,0 +1,1058 @@
+{
+  "artifactVersion": 1,
+  "generatedAtMs": 1773238108786,
+  "verifierVersion": "0.1.0",
+  "sourceMode": "seeded-live",
+  "tickTimestampMs": 1773235800000,
+  "warId": 1,
+  "tickPlan": [
+    {
+      "tickTimestampMs": 1773235800000,
+      "systemId": 30005277
+    },
+    {
+      "tickTimestampMs": 1773235800000,
+      "systemId": 30017227
+    },
+    {
+      "tickTimestampMs": 1773235800000,
+      "systemId": 30020691
+    }
+  ],
+  "commitments": [
+    {
+      "warId": 1,
+      "systemId": 30005277,
+      "tickTimestampMs": 1773235800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": 5,
+      "snapshotHash": "0x6dbc22916e105aea6871a1036ab2de80bae273c17c465c13494af0ed5146d3dc"
+    },
+    {
+      "warId": 1,
+      "systemId": 30017227,
+      "tickTimestampMs": 1773235800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": 3,
+      "snapshotHash": "0x8f2720117727370eb7dc96030925b2a25e48deb1c9270c970d4259a1f1dbb1a7"
+    },
+    {
+      "warId": 1,
+      "systemId": 30020691,
+      "tickTimestampMs": 1773235800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 200,
+      "pointsAwarded": 1,
+      "snapshotHash": "0x6c78743b53390e3ba14ab04886399108174f397330dede788b116fd2d1d9453c"
+    }
+  ],
+  "snapshots": [
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 30005277,
+      "tickTimestampMs": 1773235800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": [
+        {
+          "tribeId": 100,
+          "points": 5
+        }
+      ],
+      "config": {
+        "phaseObjectId": null,
+        "warConfigVersion": 5,
+        "phaseId": 3,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 100,
+        "topScore": 4,
+        "secondTribeId": 200,
+        "secondScore": 2,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 4,
+          "qualifyingAssemblyCount": 4
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 2,
+          "qualifyingAssemblyCount": 2
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 5,
+        "allowedAssemblyFamilies": [
+          "smart_gate",
+          "smart_storage_unit"
+        ],
+        "allowedAssemblyTypeIds": [
+          88082,
+          88086
+        ],
+        "allowedStorageTypeIds": [
+          88082
+        ],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 30017227,
+      "tickTimestampMs": 1773235800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 100,
+      "pointsAwarded": [
+        {
+          "tribeId": 100,
+          "points": 3
+        }
+      ],
+      "config": {
+        "phaseObjectId": null,
+        "warConfigVersion": 5,
+        "phaseId": 3,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 100,
+        "topScore": 3,
+        "secondTribeId": 200,
+        "secondScore": 1,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 3,
+          "qualifyingAssemblyCount": 3
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 3,
+        "allowedAssemblyFamilies": [
+          "smart_gate"
+        ],
+        "allowedAssemblyTypeIds": [
+          88086
+        ],
+        "allowedStorageTypeIds": [],
+        "storageRequirementMode": "NONE",
+        "requiredItemTypeIds": [],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    },
+    {
+      "snapshotVersion": 1,
+      "warId": 1,
+      "systemId": 30020691,
+      "tickTimestampMs": 1773235800000,
+      "state": "CONTROLLED",
+      "controllerTribeId": 200,
+      "pointsAwarded": [
+        {
+          "tribeId": 200,
+          "points": 1
+        }
+      ],
+      "config": {
+        "phaseObjectId": null,
+        "warConfigVersion": 5,
+        "phaseId": 3,
+        "systemConfigVersion": 1
+      },
+      "resolution": {
+        "topTribeId": 200,
+        "topScore": 3,
+        "secondTribeId": 100,
+        "secondScore": 1,
+        "requiredMargin": 1
+      },
+      "presenceRows": [
+        {
+          "tribeId": 100,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1
+        },
+        {
+          "tribeId": 200,
+          "presenceScore": 3,
+          "qualifyingAssemblyCount": 3
+        }
+      ],
+      "explanation": {
+        "pointsPerTick": 1,
+        "allowedAssemblyFamilies": [
+          "smart_storage_unit"
+        ],
+        "allowedAssemblyTypeIds": [
+          88082
+        ],
+        "allowedStorageTypeIds": [
+          88082
+        ],
+        "storageRequirementMode": "SPECIFIC_ITEMS",
+        "requiredItemTypeIds": [
+          1000000038887
+        ],
+        "takeMargin": 1,
+        "holdMargin": 1
+      }
+    }
+  ],
+  "scoreboard": {
+    "tick": 1,
+    "timestamp": 1773235800000,
+    "tribeScores": [
+      {
+        "id": 100,
+        "name": "Tribe Red",
+        "color": "var(--tribe-a)",
+        "points": 8
+      },
+      {
+        "id": 200,
+        "name": "Tribe Blue",
+        "color": "var(--tribe-b)",
+        "points": 1
+      }
+    ]
+  },
+  "inputs": {
+    "candidateCollection": {
+      "mode": "seeded_scenario",
+      "detail": "live-war"
+    },
+    "activeSystems": {
+      "mode": "scenario_phase",
+      "detail": "Live Simulation Window"
+    },
+    "ownerResolution": {
+      "mode": "scenario_overlay",
+      "detail": "tribe ids declared in scenario ticks"
+    },
+    "locationResolution": {
+      "mode": "scenario_overlay",
+      "detail": "published solarsystem in scenario overlay when present, otherwise explicit system ids"
+    }
+  },
+  "systems": [
+    {
+      "systemId": 30005277,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 30005277,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": [
+          {
+            "tribeId": 100,
+            "points": 5
+          }
+        ],
+        "config": {
+          "phaseObjectId": null,
+          "warConfigVersion": 5,
+          "phaseId": 3,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 100,
+          "topScore": 4,
+          "secondTribeId": 200,
+          "secondScore": 2,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 4,
+            "qualifyingAssemblyCount": 4
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 2,
+            "qualifyingAssemblyCount": 2
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 5,
+          "allowedAssemblyFamilies": [
+            "smart_gate",
+            "smart_storage_unit"
+          ],
+          "allowedAssemblyTypeIds": [
+            88082,
+            88086
+          ],
+          "allowedStorageTypeIds": [
+            88082
+          ],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 1,
+        "systemId": 30005277,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": 5,
+        "snapshotHash": "0x6dbc22916e105aea6871a1036ab2de80bae273c17c465c13494af0ed5146d3dc"
+      },
+      "resolution": {
+        "warId": 1,
+        "systemId": 30005277,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "topTribeId": 100,
+        "topScore": 4,
+        "secondTribeId": 200,
+        "secondScore": 2,
+        "requiredMargin": 1,
+        "pointsAwarded": 5
+      },
+      "presenceRows": [
+        {
+          "warId": 1,
+          "systemId": 30005277,
+          "tickTimestampMs": 1773235800000,
+          "tribeId": 100,
+          "presenceScore": 4,
+          "qualifyingAssemblyCount": 4,
+          "assemblies": [
+            {
+              "assemblyId": "0x0ab8744e0bb8ca478ff435f11ec53f1027956bc00d9c40080292f3c810bc8bf2",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0x18c676fc0a3d4f1c3fc9c90ab2bd0292081410951a3b47017fa298819dcd6e96",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0x2b6d052137818761cbfd07538507959abf3609fd2cb0490b632fd93f10f929f3",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0x9f25825c78ad4490072289f8746c6239a7979fdd03967b9f9366a8299b0a8fbb",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        },
+        {
+          "warId": 1,
+          "systemId": 30005277,
+          "tickTimestampMs": 1773235800000,
+          "tribeId": 200,
+          "presenceScore": 2,
+          "qualifyingAssemblyCount": 2,
+          "assemblies": [
+            {
+              "assemblyId": "0x06e1e907e9eb4b96d682a740ab661d3eb0bd23091167fd1ee242e9f2b78b89fe",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0xb38dd033967c7e9efbc9489850bed220d5d696c8a82a96bd755ac7dbbbbbfbc4",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0x9f25825c78ad4490072289f8746c6239a7979fdd03967b9f9366a8299b0a8fbb",
+          "systemId": 30005277,
+          "ownerCharacterId": "0xef8860cffe4ec95ac01d6a2315fc09ccd9b4e8af277614eb5354dab0154b8190",
+          "tribeId": 100,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x18c676fc0a3d4f1c3fc9c90ab2bd0292081410951a3b47017fa298819dcd6e96",
+          "systemId": 30005277,
+          "ownerCharacterId": "0x98cfc68aa55132fb264de3502fb5dc7040dd8f7c3e47b09752c60fcbba4e2a7d",
+          "tribeId": 100,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x0ab8744e0bb8ca478ff435f11ec53f1027956bc00d9c40080292f3c810bc8bf2",
+          "systemId": 30005277,
+          "ownerCharacterId": "0xef8860cffe4ec95ac01d6a2315fc09ccd9b4e8af277614eb5354dab0154b8190",
+          "tribeId": 100,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x2b6d052137818761cbfd07538507959abf3609fd2cb0490b632fd93f10f929f3",
+          "systemId": 30005277,
+          "ownerCharacterId": "0x98cfc68aa55132fb264de3502fb5dc7040dd8f7c3e47b09752c60fcbba4e2a7d",
+          "tribeId": 100,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x06e1e907e9eb4b96d682a740ab661d3eb0bd23091167fd1ee242e9f2b78b89fe",
+          "systemId": 30005277,
+          "ownerCharacterId": "0xdb90097f5d532c603516128fc7de353496b382fd24741188b29f3a817f684a09",
+          "tribeId": 200,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0xb38dd033967c7e9efbc9489850bed220d5d696c8a82a96bd755ac7dbbbbbfbc4",
+          "systemId": 30005277,
+          "ownerCharacterId": "0xdb90097f5d532c603516128fc7de353496b382fd24741188b29f3a817f684a09",
+          "tribeId": 200,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        }
+      ],
+      "editorialDisplay": {
+        "systemId": "30005277",
+        "displayName": "",
+        "publicRuleText": "Online smart gates and smart storage units count equally toward control in this system."
+      }
+    },
+    {
+      "systemId": 30017227,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 30017227,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": [
+          {
+            "tribeId": 100,
+            "points": 3
+          }
+        ],
+        "config": {
+          "phaseObjectId": null,
+          "warConfigVersion": 5,
+          "phaseId": 3,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 100,
+          "topScore": 3,
+          "secondTribeId": 200,
+          "secondScore": 1,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 3,
+            "qualifyingAssemblyCount": 3
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 3,
+          "allowedAssemblyFamilies": [
+            "smart_gate"
+          ],
+          "allowedAssemblyTypeIds": [
+            88086
+          ],
+          "allowedStorageTypeIds": [],
+          "storageRequirementMode": "NONE",
+          "requiredItemTypeIds": [],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 1,
+        "systemId": 30017227,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "pointsAwarded": 3,
+        "snapshotHash": "0x8f2720117727370eb7dc96030925b2a25e48deb1c9270c970d4259a1f1dbb1a7"
+      },
+      "resolution": {
+        "warId": 1,
+        "systemId": 30017227,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 100,
+        "topTribeId": 100,
+        "topScore": 3,
+        "secondTribeId": 200,
+        "secondScore": 1,
+        "requiredMargin": 1,
+        "pointsAwarded": 3
+      },
+      "presenceRows": [
+        {
+          "warId": 1,
+          "systemId": 30017227,
+          "tickTimestampMs": 1773235800000,
+          "tribeId": 100,
+          "presenceScore": 3,
+          "qualifyingAssemblyCount": 3,
+          "assemblies": [
+            {
+              "assemblyId": "0x102e17f06613ec75c18707a86dec0b1a207c384dd1dedcaca0391199a3e01050",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0xc8cd755f9d064e613a1577f1f72b28bcaa941308e407c7b714b83527d6688267",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0xe79d7419c999ff576f1c0bcfbfb5e0e9329e28aa09a3859df7707a247b52ea3b",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        },
+        {
+          "warId": 1,
+          "systemId": 30017227,
+          "tickTimestampMs": 1773235800000,
+          "tribeId": 200,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1,
+          "assemblies": [
+            {
+              "assemblyId": "0xc480a616f6a64737bba1b56cd0aa6cb2460e238159f9759282eea16f02741813",
+              "assemblyFamily": "smart_gate",
+              "assemblyTypeId": 88086,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0xc8cd755f9d064e613a1577f1f72b28bcaa941308e407c7b714b83527d6688267",
+          "systemId": 30017227,
+          "ownerCharacterId": "0xef8860cffe4ec95ac01d6a2315fc09ccd9b4e8af277614eb5354dab0154b8190",
+          "tribeId": 100,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0xe79d7419c999ff576f1c0bcfbfb5e0e9329e28aa09a3859df7707a247b52ea3b",
+          "systemId": 30017227,
+          "ownerCharacterId": "0xef8860cffe4ec95ac01d6a2315fc09ccd9b4e8af277614eb5354dab0154b8190",
+          "tribeId": 100,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x102e17f06613ec75c18707a86dec0b1a207c384dd1dedcaca0391199a3e01050",
+          "systemId": 30017227,
+          "ownerCharacterId": "0x98cfc68aa55132fb264de3502fb5dc7040dd8f7c3e47b09752c60fcbba4e2a7d",
+          "tribeId": 100,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0xc480a616f6a64737bba1b56cd0aa6cb2460e238159f9759282eea16f02741813",
+          "systemId": 30017227,
+          "ownerCharacterId": "0xdb90097f5d532c603516128fc7de353496b382fd24741188b29f3a817f684a09",
+          "tribeId": 200,
+          "assemblyFamily": "smart_gate",
+          "assemblyTypeId": 88086,
+          "storageTypeId": null,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        }
+      ],
+      "editorialDisplay": {
+        "systemId": "30017227",
+        "displayName": "",
+        "publicRuleText": "Only online smart gates count toward control in this system."
+      }
+    },
+    {
+      "systemId": 30020691,
+      "snapshot": {
+        "snapshotVersion": 1,
+        "warId": 1,
+        "systemId": 30020691,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 200,
+        "pointsAwarded": [
+          {
+            "tribeId": 200,
+            "points": 1
+          }
+        ],
+        "config": {
+          "phaseObjectId": null,
+          "warConfigVersion": 5,
+          "phaseId": 3,
+          "systemConfigVersion": 1
+        },
+        "resolution": {
+          "topTribeId": 200,
+          "topScore": 3,
+          "secondTribeId": 100,
+          "secondScore": 1,
+          "requiredMargin": 1
+        },
+        "presenceRows": [
+          {
+            "tribeId": 100,
+            "presenceScore": 1,
+            "qualifyingAssemblyCount": 1
+          },
+          {
+            "tribeId": 200,
+            "presenceScore": 3,
+            "qualifyingAssemblyCount": 3
+          }
+        ],
+        "explanation": {
+          "pointsPerTick": 1,
+          "allowedAssemblyFamilies": [
+            "smart_storage_unit"
+          ],
+          "allowedAssemblyTypeIds": [
+            88082
+          ],
+          "allowedStorageTypeIds": [
+            88082
+          ],
+          "storageRequirementMode": "SPECIFIC_ITEMS",
+          "requiredItemTypeIds": [
+            1000000038887
+          ],
+          "takeMargin": 1,
+          "holdMargin": 1
+        }
+      },
+      "commitment": {
+        "warId": 1,
+        "systemId": 30020691,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 200,
+        "pointsAwarded": 1,
+        "snapshotHash": "0x6c78743b53390e3ba14ab04886399108174f397330dede788b116fd2d1d9453c"
+      },
+      "resolution": {
+        "warId": 1,
+        "systemId": 30020691,
+        "tickTimestampMs": 1773235800000,
+        "state": "CONTROLLED",
+        "controllerTribeId": 200,
+        "topTribeId": 200,
+        "topScore": 3,
+        "secondTribeId": 100,
+        "secondScore": 1,
+        "requiredMargin": 1,
+        "pointsAwarded": 1
+      },
+      "presenceRows": [
+        {
+          "warId": 1,
+          "systemId": 30020691,
+          "tickTimestampMs": 1773235800000,
+          "tribeId": 100,
+          "presenceScore": 1,
+          "qualifyingAssemblyCount": 1,
+          "assemblies": [
+            {
+              "assemblyId": "0x1fa5489aba81f9c6384456d11caf86e308aea2089230bdd6bd6f791f36692aef",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0xef308ccd6d13c1efc03092b173aab33aac37a1968314d39201ff4846b9988c9f",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": false,
+              "storageRulePassed": false,
+              "excludedReason": "storage_rule_failed"
+            }
+          ]
+        },
+        {
+          "warId": 1,
+          "systemId": 30020691,
+          "tickTimestampMs": 1773235800000,
+          "tribeId": 200,
+          "presenceScore": 3,
+          "qualifyingAssemblyCount": 3,
+          "assemblies": [
+            {
+              "assemblyId": "0x81a792802ff760f832bb8f11a4c7b53c1491b42b9c957abeeb14d0b53ff4ca44",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0x87e5671c36942a19a74cd7acd70e76597532f19ee6c52cbd89389e8b74ba130b",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            },
+            {
+              "assemblyId": "0xfb6d195fdcc1a19311d80b771d144bddb955f6320f6f652f6e1b7cfe87cb5654",
+              "assemblyFamily": "smart_storage_unit",
+              "assemblyTypeId": 88082,
+              "status": "ONLINE",
+              "countsForPresence": true,
+              "storageRulePassed": true,
+              "excludedReason": null
+            }
+          ]
+        }
+      ],
+      "candidateAssemblies": [
+        {
+          "assemblyId": "0xfb6d195fdcc1a19311d80b771d144bddb955f6320f6f652f6e1b7cfe87cb5654",
+          "systemId": 30020691,
+          "ownerCharacterId": "0xdb90097f5d532c603516128fc7de353496b382fd24741188b29f3a817f684a09",
+          "tribeId": 200,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [
+            {
+              "itemTypeId": 1000000038887,
+              "quantity": 2
+            }
+          ],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x87e5671c36942a19a74cd7acd70e76597532f19ee6c52cbd89389e8b74ba130b",
+          "systemId": 30020691,
+          "ownerCharacterId": "0xdb90097f5d532c603516128fc7de353496b382fd24741188b29f3a817f684a09",
+          "tribeId": 200,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [
+            {
+              "itemTypeId": 1000000038887,
+              "quantity": 1
+            }
+          ],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x81a792802ff760f832bb8f11a4c7b53c1491b42b9c957abeeb14d0b53ff4ca44",
+          "systemId": 30020691,
+          "ownerCharacterId": "0xdb90097f5d532c603516128fc7de353496b382fd24741188b29f3a817f684a09",
+          "tribeId": 200,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [
+            {
+              "itemTypeId": 1000000038887,
+              "quantity": 3
+            }
+          ],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0x1fa5489aba81f9c6384456d11caf86e308aea2089230bdd6bd6f791f36692aef",
+          "systemId": 30020691,
+          "ownerCharacterId": "0xef8860cffe4ec95ac01d6a2315fc09ccd9b4e8af277614eb5354dab0154b8190",
+          "tribeId": 100,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [
+            {
+              "itemTypeId": 1000000038887,
+              "quantity": 1
+            }
+          ],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        },
+        {
+          "assemblyId": "0xef308ccd6d13c1efc03092b173aab33aac37a1968314d39201ff4846b9988c9f",
+          "systemId": 30020691,
+          "ownerCharacterId": "0x98cfc68aa55132fb264de3502fb5dc7040dd8f7c3e47b09752c60fcbba4e2a7d",
+          "tribeId": 100,
+          "assemblyFamily": "smart_storage_unit",
+          "assemblyTypeId": 88082,
+          "storageTypeId": 88082,
+          "status": "ONLINE",
+          "inventory": [],
+          "provenance": {
+            "candidateSource": "seeded_scenario",
+            "systemSource": "scenario_published_solarsystem",
+            "ownerCharacterSource": "seeded_character",
+            "tribeSource": "scenario_overlay",
+            "assemblyMetadataSource": "seeded_world",
+            "statusSource": "scenario_overlay",
+            "inventorySource": "scenario_overlay",
+            "locationSource": "published_solarsystem"
+          }
+        }
+      ],
+      "editorialDisplay": {
+        "systemId": "30020691",
+        "displayName": "",
+        "publicRuleText": "Control requires an online smart storage unit containing at least one Synthetic Mining Lens."
+      }
+    }
+  ],
+  "receiptPath": "audit/.tmp-live-clock-15/receipts/1773235800000.json"
+}

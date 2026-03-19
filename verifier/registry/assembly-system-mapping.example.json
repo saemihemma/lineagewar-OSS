@@ -1,0 +1,13 @@
+{
+  "assemblies": [
+    {
+      "assemblyId": "0xreplace_with_live_assembly_object_id",
+      "systemId": 30020691,
+      "timestamp": "2026-03-11T00:00:00.000Z",
+      "txDigest": "DUaTw7ngy7bcwqxgcfNp2nSDdFMaMHBb2DcNdGyKPQDw",
+      "x": 123.45,
+      "y": 678.9,
+      "z": 100.25
+    }
+  ]
+}

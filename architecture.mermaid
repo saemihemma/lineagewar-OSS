@@ -1,0 +1,18 @@
+graph TD
+    Admin[Admin Panel<br/>React + Wallet] -->|wallet-signed txs| Chain[Sui Blockchain<br/>lineage_war package]
+    Admin -->|POST /notify| Verifier[Verifier<br/>Node.js + PostgreSQL]
+
+    Chain -->|events: WarCreated,<br/>TribeRegistered,<br/>ConfigPublished| Verifier
+    Chain -->|GraphQL: assembly<br/>ownership pipeline| Verifier
+
+    Verifier -->|resolve_war tx| Chain
+    Verifier -->|commit ticks| DB[(PostgreSQL<br/>committed_ticks_v2)]
+    Verifier -->|latest.json<br/>atomic write| Scoreboard[Scoreboard<br/>React]
+
+    DB -->|load committed<br/>ticks| Verifier
+
+    style Admin fill:#1a1a2e,stroke:#e94560,color:#fff
+    style Chain fill:#0f3460,stroke:#e94560,color:#fff
+    style Verifier fill:#16213e,stroke:#0f3460,color:#fff
+    style DB fill:#1a1a2e,stroke:#533483,color:#fff
+    style Scoreboard fill:#1a1a2e,stroke:#e94560,color:#fff
