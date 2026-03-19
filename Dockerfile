@@ -1,7 +1,7 @@
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
-ENV PATH="/app/admin/node_modules/.bin:/app/scoreboard/node_modules/.bin:/app/verifier/node_modules/.bin:$PATH"
+RUN npm install -g typescript vite tsx
 
 # Admin panel
 COPY admin/ admin/
@@ -17,4 +17,4 @@ RUN cd verifier && npm install
 
 EXPOSE 3001
 
-CMD ["npx", "tsx", "verifier/src/live-chain-loop.ts"]
+CMD ["tsx", "verifier/src/live-chain-loop.ts"]
