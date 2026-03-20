@@ -288,14 +288,20 @@ export function usePublishedPhaseTimeline(overrideWarId?: number | string | null
         getObject: (input: unknown) => Promise<{ data?: { content?: { fields?: Record<string, unknown> } } }>;
       };
 
-      const response = await rpcClient.queryEvents({
+      const phaseResponse = await rpcClient.queryEvents({
         query: { MoveEventType: `${LINEAGE_WAR_PACKAGE_ID}::config::PhaseConfigPublishedEvent` },
         order: "ascending",
         limit: 50,
       });
 
-      const entries: OnChainPhaseEntry[] = [];
-      for (const event of response.data ?? []) {
+      const systemResponse = await rpcClient.queryEvents({
+        query: { MoveEventType: `${LINEAGE_WAR_PACKAGE_ID}::config::SystemConfigPublishedEvent` },
+        order: "ascending",
+        limit: 200,
+      });
+
+      const phases: OnChainPhaseEntry[] = [];
+      for (const event of phaseResponse.data ?? []) {
         const parsed = event.parsedJson ?? {};
         const eventWarId = Number(parsed.war_id);
         if (eventWarId !== warId) continue;
@@ -320,14 +326,86 @@ export function usePublishedPhaseTimeline(overrideWarId?: number | string | null
         const fields = obj.data?.content?.fields as Record<string, unknown> | undefined;
         if (!fields) continue;
 
-        entries.push({
+        phases.push({
           version: Number(fields.phase_id) || 0,
           effectiveFromMs: Number(fields.effective_from_ms) || 0,
           systems: [],
         });
       }
 
-      return entries;
+      phases.sort((a, b) => a.effectiveFromMs - b.effectiveFromMs || a.version - b.version);
+
+      const phaseSystems = new Map<number, Map<number, OnChainPhaseSystemEntry & { effectiveFromMs: number; version: number }>>();
+
+      for (const event of systemResponse.data ?? []) {
+        const parsed = event.parsedJson ?? {};
+        const eventWarId = Number(parsed.war_id);
+        if (eventWarId !== warId) continue;
+
+        const txDigest = event.id?.txDigest;
+        if (!txDigest) continue;
+
+        const tx = await rpcClient.core.getTransaction({
+          digest: txDigest,
+          include: { effects: true, objectTypes: true },
+        });
+        const created = extractCreatedObjectsByType(tx);
+        const systemConfigId = Object.entries(created.createdByType)
+          .find(([type]) => type.endsWith(SYSTEM_CONFIG_TYPE_SUFFIX))?.[1]?.[0] ?? null;
+
+        if (!systemConfigId) continue;
+
+        const obj = await rpcClient.getObject({
+          id: systemConfigId,
+          options: { showContent: true },
+        });
+        const fields = obj.data?.content?.fields as Record<string, unknown> | undefined;
+        if (!fields) continue;
+
+        const systemEffectiveFromMs = Number(fields.effective_from_ms) || 0;
+        // Phase membership is inferred from publish timing because systems are
+        // published as separate config objects, not embedded in PhaseConfig.
+        const targetPhase = [...phases]
+          .reverse()
+          .find((phase) => phase.effectiveFromMs <= systemEffectiveFromMs);
+
+        if (!targetPhase) continue;
+
+        const systemId = Number(fields.system_id);
+        if (!Number.isFinite(systemId) || systemId <= 0) continue;
+
+        const systemEntry = {
+          systemId,
+          pointsPerTick: Number(fields.points_per_tick) || 0,
+          takeMargin: Number(fields.take_margin) || 0,
+          holdMargin: Number(fields.hold_margin) || 0,
+          neutralMinTotalPresence: Number(fields.neutral_min_total_presence) || 0,
+          contestedWhenTied: fields.contested_when_tied === true,
+          enabled: fields.enabled === true,
+          allowedAssemblyFamilies: [],
+          allowedAssemblyTypeIds: [],
+          effectiveFromMs: systemEffectiveFromMs,
+          version: Number(fields.version) || 0,
+        } satisfies OnChainPhaseSystemEntry & { effectiveFromMs: number; version: number };
+
+        const systemsForPhase = phaseSystems.get(targetPhase.version) ?? new Map<number, typeof systemEntry>();
+        const existing = systemsForPhase.get(systemId);
+        if (
+          !existing ||
+          systemEntry.effectiveFromMs > existing.effectiveFromMs ||
+          (systemEntry.effectiveFromMs === existing.effectiveFromMs && systemEntry.version > existing.version)
+        ) {
+          systemsForPhase.set(systemId, systemEntry);
+        }
+        phaseSystems.set(targetPhase.version, systemsForPhase);
+      }
+
+      return phases.map((phase) => ({
+        ...phase,
+        systems: [...(phaseSystems.get(phase.version)?.values() ?? [])]
+          .sort((a, b) => a.systemId - b.systemId)
+          .map(({ effectiveFromMs: _effectiveFromMs, version: _version, ...entry }) => entry),
+      }));
     },
   });
 }
