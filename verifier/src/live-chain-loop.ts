@@ -1,3 +1,5 @@
+console.log(`[verifier] Starting... (pid=${process.pid}, node=${process.version}, PORT=${process.env.PORT || "unset"})`);
+
 import "dotenv/config";
 import path from "node:path";
 import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
@@ -11,6 +13,8 @@ import { TickLedger, type CommittedTick } from "./tick-ledger.js";
 import { buildTickPlan } from "./tick-planner.js";
 import { discoverWarConfig, refreshWarState, type DiscoveredWarConfig } from "./discover-war-config.js";
 import type { ResolvedTickResult, VerifierConfig } from "./types.js";
+
+console.log(`[verifier] All modules loaded successfully.`);
 
 const PAUSED_POLL_MS = 5 * 60_000;
 const TICK_BUFFER_MS = 30_000;
