@@ -10,12 +10,11 @@ import { SUI_RPC_URL } from "./lib/constants";
 import "./index.css";
 
 const queryClient = new QueryClient();
-const networks = ["testnet"] as const;
+const networks = ["testnet", "mainnet"] as const;
 
 const dAppKit = createDAppKit({
   networks,
   defaultNetwork: "testnet",
-  slushWalletConfig: null,
   createClient(network) {
     return new SuiJsonRpcClient({
       network,
