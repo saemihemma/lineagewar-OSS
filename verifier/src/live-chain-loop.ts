@@ -357,6 +357,43 @@ async function runWarLoop(
     console.log("  Tick ledger: disabled (no DATABASE_URL). All ticks will be resolved live each cycle.");
   }
 
+  // Write initial scoreboard immediately so the frontend has fresh war data
+  {
+    const tribeScores = discovered.participatingTribeIds.map((id) => ({
+      id,
+      name: discovered.tribeNames[String(id)] ?? `Tribe ${id}`,
+      points: 0,
+      color: `var(--tribe-${String.fromCharCode(97 + discovered.participatingTribeIds.indexOf(id))})`,
+    }));
+    const initialEnvelope = {
+      config: { source: "live-chain", warId: discovered.warId, tickStartMs: Date.now(), tickCount: 0, phaseStatusWithheld: false },
+      tickPlan: [],
+      commitments: [],
+      snapshots: [],
+      scoreboard: {
+        warName: discovered.warDisplayName || `War ${discovered.warId}`,
+        lastTickMs: null,
+        tickRateMinutes: currentTickMinutes,
+        tribeScores,
+        systems: [],
+        chartData: [],
+        chartSeries: tribeScores.map((ts) => ({
+          tribeId: ts.id,
+          dataKey: `tribe_${ts.id}`,
+          name: ts.name,
+          color: ts.color,
+        })),
+        commitments: [],
+        snapshots: [],
+      },
+      systemDisplayConfigs: [],
+    };
+    const { mkdirSync, writeFileSync } = await import("node:fs");
+    mkdirSync(path.dirname(outputPath), { recursive: true });
+    writeFileSync(outputPath, JSON.stringify(initialEnvelope, null, 2) + "\n", "utf8");
+    console.log(`Wrote initial scoreboard for War ${discovered.warId} to ${outputPath}`);
+  }
+
   // Initial tick (only if configs exist)
   if (hasConfigs) {
     console.log(`Running initial tick (up to ${maxHistory} historical ticks)...`);
@@ -387,6 +424,15 @@ async function runWarLoop(
         scheduleNext();
       });
     }, sleepMs);
+
+    waitForRefresh().then(() => {
+      if (timer) clearTimeout(timer);
+      console.log(`\n[${new Date().toISOString()}] /notify received — running immediate refresh cycle...`);
+      void cycle().catch((err) => {
+        console.error("Refresh cycle failed:", err);
+        scheduleNext();
+      });
+    });
   };
 
   const cycle = async (): Promise<void> => {
@@ -678,12 +724,23 @@ async function runWarLoop(
 const WAR_POLL_MS = 5 * 60_000;
 
 let notifyResolve: (() => void) | null = null;
+let refreshResolve: (() => void) | null = null;
 
 function triggerNotify(): void {
   if (notifyResolve) {
     notifyResolve();
     notifyResolve = null;
   }
+  if (refreshResolve) {
+    refreshResolve();
+    refreshResolve = null;
+  }
+}
+
+function waitForRefresh(): Promise<void> {
+  return new Promise((resolve) => {
+    refreshResolve = resolve;
+  });
 }
 
 function waitForNotifyOrTimeout(ms: number): Promise<void> {

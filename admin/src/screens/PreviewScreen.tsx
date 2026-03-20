@@ -63,10 +63,7 @@ export default function PreviewScreen() {
       setLastExecution(execution);
       setSubmitState("submitted");
 
-      if (draft.kind === "create-war") {
-        notifyVerifier();
-      }
-
+      notifyVerifier();
       setDraft(null);
     } catch (error) {
       setSubmitState("idle");
