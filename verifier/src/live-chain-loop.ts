@@ -860,16 +860,17 @@ async function main(): Promise<void> {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("No unresolved war found") && warIdOverride == null) {
       console.log("No unresolved wars found on chain.");
-      verifierState = "waiting";
-      await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once);
     } else {
-      throw err;
+      console.error("War discovery/loop failed:", msg);
+      if (err instanceof Error && err.stack) console.error(err.stack);
     }
+    verifierState = "waiting";
+    await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once);
   }
 }
 
 main().catch((error: unknown) => {
-  console.error("Live chain verifier loop failed.");
+  console.error("Live chain verifier loop failed fatally.");
   console.error(error);
   process.exit(1);
 });
