@@ -10,17 +10,16 @@ import { SUI_RPC_URL } from "./lib/constants";
 import "./index.css";
 
 const queryClient = new QueryClient();
-const networks = ["testnet", "mainnet"];
+const networks = ["testnet"] as const;
 
 const dAppKit = createDAppKit({
   networks,
   defaultNetwork: "testnet",
+  slushWalletConfig: null,
   createClient(network) {
-    const selectedNetwork = network as "testnet" | "mainnet";
     return new SuiJsonRpcClient({
-      network: selectedNetwork,
-      url:
-        selectedNetwork === "testnet" ? SUI_RPC_URL || getJsonRpcFullnodeUrl("testnet") : getJsonRpcFullnodeUrl("mainnet"),
+      network,
+      url: SUI_RPC_URL || getJsonRpcFullnodeUrl(network),
     });
   },
 });
