@@ -2,6 +2,12 @@ FROM node:22-slim
 
 WORKDIR /app
 
+# Build args — Railway passes service env vars as build args when declared
+ARG VITE_LINEAGE_WAR_PACKAGE_ID
+ARG VITE_SUI_RPC
+ARG VITE_WAR_REGISTRY_ID
+ARG VITE_SUI_GRAPHQL_URL
+
 # Admin panel
 COPY admin/ admin/
 RUN cd admin && npm install && npm run build
