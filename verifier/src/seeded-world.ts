@@ -76,6 +76,13 @@ function tryReadObjectIds(repoRoot: string): Partial<Record<string, string>> {
 
 export function loadSeededWorldResources(repoRoot = path.resolve(process.cwd(), "..")): SeededWorldResources {
   const testResourcesPath = path.resolve(repoRoot, "repos/world-contracts/test-resources.json");
+  if (!existsSync(testResourcesPath)) {
+    return {
+      assemblySeeds: {},
+      objectIds: {},
+      scenarios: {},
+    };
+  }
   const testResources = readJsonFile<TestResources>(testResourcesPath);
   const objectIds = tryReadObjectIds(repoRoot);
   const storageUnitSeeds = buildRepeatedSeeds("storageUnit", 12, {

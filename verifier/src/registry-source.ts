@@ -4,7 +4,6 @@ import { discoverAssemblies } from "./assembly-discovery.js";
 import { OnChainConfigVerifierDataSource } from "./chain-source.js";
 import { resolveAssembliesViaGraphQL, type GraphqlAssemblyState } from "./graphql-assembly-source.js";
 import { queryLocationEvents } from "./location-event-query.js";
-import { loadSeededWorldResources } from "./seeded-world.js";
 import { TribeResolver } from "./tribe-resolver.js";
 import {
   AssemblySystemMappingDocument,
@@ -388,7 +387,7 @@ function resolveSystemLocation(
 }
 
 export class RegistryBackedVerifierDataSource extends OnChainConfigVerifierDataSource {
-  private readonly resources = loadSeededWorldResources();
+  private readonly resources = { assemblySeeds: {} as Record<string, unknown>, objectIds: {} as Record<string, string>, scenarios: {} };
   private registryEntries: LiveAssemblyRegistryEntry[];
   private readonly systemIdByLocationHashHex: Map<string, number>;
   private readonly systemIdByAssemblyId: Map<string, number>;
