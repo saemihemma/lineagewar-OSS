@@ -78,9 +78,11 @@ export function loadSeededWorldResources(repoRoot = path.resolve(process.cwd(), 
   const testResourcesPath = path.resolve(repoRoot, "repos/world-contracts/test-resources.json");
   if (!existsSync(testResourcesPath)) {
     return {
+      locationHash: "",
+      characterIds: {},
       assemblySeeds: {},
+      itemTypeIds: {},
       objectIds: {},
-      scenarios: {},
     };
   }
   const testResources = readJsonFile<TestResources>(testResourcesPath);

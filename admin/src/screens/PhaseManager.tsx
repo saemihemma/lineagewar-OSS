@@ -5,7 +5,6 @@ import { useCurrentAccount, useCurrentClient } from "@mysten/dapp-kit-react";
 import {
   ASSEMBLY_FAMILY_OPTIONS,
   ASSEMBLY_TYPE_OPTIONS,
-  CURRENT_ACTIVE_SYSTEM_IDS,
   CURRENT_ADMIN_CAP_ID,
   CURRENT_WAR_ID,
   WORLD_API_BASE_URL,
@@ -458,7 +457,7 @@ function SystemRuleEditor({
 
 export default function PhaseManager() {
   const navigate = useNavigate();
-  const { setDraft, setPreviousPhaseSummary, selectedAdminCapId } = useAdminPortalState();
+  const { setDraft, setPreviousPhaseSummary, selectedAdminCapId, setSelectedAdminCapId } = useAdminPortalState();
   const ownedAdminCaps = useOwnedAdminCaps();
   const selectedAdminCap = ownedAdminCaps.data?.find((cap) => cap.objectId === selectedAdminCapId) ?? null;
   const activeWarId = selectedAdminCap?.warId ?? null;
@@ -492,9 +491,10 @@ export default function PhaseManager() {
 
   const adminCapId = useMemo(() => {
     if (selectedAdminCapId) return selectedAdminCapId;
-    if (CURRENT_ADMIN_CAP_ID) return CURRENT_ADMIN_CAP_ID;
     const caps = ownedAdminCaps.data ?? [];
-    return caps[0]?.objectId ?? "";
+    if (caps[0]?.objectId) return caps[0].objectId;
+    if (CURRENT_ADMIN_CAP_ID) return CURRENT_ADMIN_CAP_ID;
+    return "";
   }, [ownedAdminCaps.data, selectedAdminCapId]);
 
   const [expandedPhase, setExpandedPhase] = useState<number | null>(null);
@@ -509,6 +509,13 @@ export default function PhaseManager() {
   const tickRateChanged = defaultTickMinutes !== onChainTickRate;
 
   useEffect(() => {
+    if (!selectedAdminCapId && ownedAdminCaps.data?.length) {
+      const sorted = [...ownedAdminCaps.data].sort((a, b) => Number(b.warId ?? 0) - Number(a.warId ?? 0));
+      setSelectedAdminCapId(sorted[0].objectId);
+    }
+  }, [ownedAdminCaps.data, selectedAdminCapId, setSelectedAdminCapId]);
+
+  useEffect(() => {
     if (currentTickRate.data != null) {
       setDefaultTickMinutes(currentTickRate.data);
     }
@@ -519,7 +526,7 @@ export default function PhaseManager() {
     label: "WAR DECLARED",
     status: chainTimeline.data?.length ? "superseded" : "active",
     activationMs: null,
-    systems: CURRENT_ACTIVE_SYSTEM_IDS.map((id) => defaultSystemRule(id)),
+    systems: [],
   };
 
   const chainPhases: PhaseEntry[] = useMemo(() => {
@@ -577,6 +584,11 @@ export default function PhaseManager() {
     }
     return entries;
   }, [chainTimeline.data]);
+
+  const knownChainSystemIds = useMemo(
+    () => new Set(chainPhases.flatMap((phase) => phase.systems.map((system) => system.systemId))),
+    [chainPhases],
+  );
 
   const phases = [genesisPhase, ...chainPhases];
   const latestPhase = phases[phases.length - 1];
@@ -692,8 +704,7 @@ export default function PhaseManager() {
       return {
         systemId: sys.systemId,
         displayName: systemNameMap.get(sys.systemId) ?? String(sys.systemId),
-        registerSystem: !CURRENT_ACTIVE_SYSTEM_IDS.includes(sys.systemId) &&
-          !chainPhases.some((cp) => cp.systems.some((s) => s.systemId === sys.systemId)),
+        registerSystem: !knownChainSystemIds.has(sys.systemId),
         pointsPerTick: sys.pointsPerTick,
         takeMargin: sys.takeMargin,
         holdMargin: sys.holdMargin,
@@ -713,7 +724,7 @@ export default function PhaseManager() {
 
     const draft: BatchPhaseConfigDraft = {
       kind: "batch-phase-config",
-      warId: selectedAdminCap?.warId ?? CURRENT_WAR_ID,
+      warId: selectedAdminCap?.warId ?? Number(CURRENT_WAR_ID || 0),
       phaseNumber: draftPhase.phaseNumber,
       version,
       effectiveFromMs: activationMs,

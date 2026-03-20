@@ -75,6 +75,8 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
   const verifierData = envelope?.scoreboard ?? undefined;
   const envelopeConfig = envelope?.config;
   const systemDisplayConfigs = envelope?.systemDisplayConfigs ?? [];
+  const tickStatus = verifierData?.tickStatus ?? envelope?.tickStatus;
+  const degradedReason = verifierData?.degradedReason ?? envelope?.degradedReason ?? null;
 
   const livePayloadReady = isScoreboardPayloadUsable(verifierData);
   const warName = useMock ? MOCK_WAR_NAME : verifierData?.warName ?? "Lineage War";
@@ -161,7 +163,15 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
       <TerminalHeader
         title={warName}
         meta={headerMeta}
-        status={useMock ? "ACTIVE" : livePayloadReady && !error ? "ACTIVE" : "STANDBY"}
+        status={
+          useMock
+            ? "ACTIVE"
+            : tickStatus === "degraded_frozen"
+              ? "DEGRADED"
+              : livePayloadReady && !error
+                ? "ACTIVE"
+                : "STANDBY"
+        }
         right={
           useVerifier ? (
             <Link
@@ -188,6 +198,23 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
           background: "var(--border-panel)",
         }}
       >
+        {tickStatus === "degraded_frozen" && (
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              padding: "0.55rem 1rem",
+              fontFamily: "IBM Plex Mono",
+              fontSize: "0.68rem",
+              letterSpacing: "0.04em",
+              color: "var(--yellow-dim)",
+              background: "rgba(242,201,76,0.08)",
+              borderBottom: "1px solid var(--border-panel)",
+            }}
+          >
+            DEGRADED TICK: GraphQL ownership resolution failed, so the verifier carried forward the last known state.
+            {degradedReason ? ` ${degradedReason}` : ""}
+          </div>
+        )}
         {/* Row 1, col 1: Scoreboard */}
         <motion.div
           custom={0}

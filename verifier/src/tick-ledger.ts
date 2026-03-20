@@ -83,7 +83,7 @@ export class TickLedger {
   async commitTicks(ticks: CommittedTick[]): Promise<void> {
     if (ticks.length === 0) return;
 
-    const rows = ticks.map((t) => ({
+    const rows: Array<Record<string, unknown>> = ticks.map((t) => ({
       war_id: t.warId,
       system_id: t.systemId,
       tick_timestamp_ms: t.tickTimestampMs,
@@ -98,7 +98,10 @@ export class TickLedger {
         "tick_timestamp_ms",
         "resolved",
       )}
-      ON CONFLICT (war_id, system_id, tick_timestamp_ms) DO NOTHING
+      ON CONFLICT (war_id, system_id, tick_timestamp_ms) DO UPDATE
+      SET
+        resolved = EXCLUDED.resolved,
+        committed_at = NOW()
     `;
   }
 

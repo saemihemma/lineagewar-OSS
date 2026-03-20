@@ -107,6 +107,7 @@ function buildTickArtifact(
 ): TickAuditArtifact {
   const orderedEntries = [...entries].sort((a, b) => a.snapshot.systemId - b.snapshot.systemId);
   const editorialBySystemId = new Map(systemDisplayConfigs.map((entry) => [entry.systemId, entry]));
+  const tickMetadata = orderedEntries[0]?.snapshot.resolutionMetadata;
 
   return {
     artifactVersion: ARTIFACT_VERSION,
@@ -115,6 +116,9 @@ function buildTickArtifact(
     sourceMode,
     tickTimestampMs,
     warId: orderedEntries[0]?.snapshot.warId ?? 0,
+    tickStatus: tickMetadata?.tickStatus,
+    degradedReason: tickMetadata?.degradedReason ?? null,
+    carriedForwardFromTickMs: tickMetadata?.carriedForwardFromTickMs ?? null,
     tickPlan: orderedEntries.map((entry) => ({
       tickTimestampMs: entry.snapshot.tickTimestampMs,
       systemId: entry.snapshot.systemId,

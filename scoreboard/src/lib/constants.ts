@@ -6,7 +6,7 @@ export const LIVE_VERIFIER_SNAPSHOT_URL =
 export const LIVE_VERIFIER_POLL_INTERVAL_MS = Number(
   import.meta.env.VITE_LIVE_VERIFIER_POLL_INTERVAL_MS ??
     import.meta.env.VITE_VERIFIER_POLL_INTERVAL_MS ??
-    (import.meta.env.DEV ? "60000" : "0"),
+    (import.meta.env.DEV ? "60000" : "15000"),
 );
 export const SIMULATION_VERIFIER_SNAPSHOT_URL =
   import.meta.env.VITE_SIM_VERIFIER_SNAPSHOT_URL ?? (import.meta.env.DEV ? "/verifier/live.json" : "");

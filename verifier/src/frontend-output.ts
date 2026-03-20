@@ -33,14 +33,18 @@ export function buildScoreboardPayload(
   snapshots: CanonicalSnapshot[],
   commitments: SnapshotCommitment[],
   tribeNameOverrides: Record<string, string> = {},
+  participatingTribeIds: number[] = [],
   chartWindowSize?: number,
 ): ScoreboardPayload {
   const resolvedTribeNames = {
     ...scenario.tribeNames,
     ...tribeNameOverrides,
   };
-  const tribeIds = [...new Set(snapshots.flatMap((snapshot) => snapshot.presenceRows.map((row) => row.tribeId)))]
-    .sort((a, b) => a - b);
+  const tribeIds = [...new Set([
+    ...participatingTribeIds,
+    ...snapshots.flatMap((snapshot) => snapshot.presenceRows.map((row) => row.tribeId)),
+    ...snapshots.flatMap((snapshot) => snapshot.pointsAwarded.map((award) => award.tribeId)),
+  ])].sort((a, b) => a - b);
 
   const chartSeries: ScoreboardChartSeries[] = tribeIds.map((tribeId, index) => ({
     tribeId,
@@ -109,11 +113,23 @@ export function buildScoreboardPayload(
     chartData.length >= 2
       ? Math.max(0, (chartData[chartData.length - 1].timestamp - chartData[chartData.length - 2].timestamp) / 60_000)
       : undefined;
+  const latestTickTimestamp = chartData[chartData.length - 1]?.timestamp ?? null;
+  const latestSnapshot = latestTickTimestamp == null
+    ? null
+    : snapshots
+      .filter((snapshot) => snapshot.tickTimestampMs === latestTickTimestamp)
+      .sort((a, b) => a.systemId - b.systemId)[0] ?? null;
 
   return {
     warName: scenario.warName,
-    lastTickMs: chartData[chartData.length - 1]?.timestamp as number,
+    lastTickMs: chartData[chartData.length - 1]?.timestamp ?? null,
     tickRateMinutes: tickRateMinutes && tickRateMinutes > 0 ? tickRateMinutes : undefined,
+    tickStatus: latestSnapshot?.resolutionMetadata.tickStatus,
+    degradedReason: latestSnapshot?.resolutionMetadata.degradedReason ?? null,
+    carriedForwardFromTickMs: latestSnapshot?.resolutionMetadata.carriedForwardFromTickMs ?? null,
+    statusMessage: latestSnapshot?.resolutionMetadata.tickStatus === "degraded_frozen"
+      ? "GraphQL ownership resolution failed; showing carried-forward state."
+      : undefined,
     tribeScores,
     systems,
     chartData: displayChartData,

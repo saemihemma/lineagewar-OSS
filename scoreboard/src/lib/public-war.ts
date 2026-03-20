@@ -110,13 +110,14 @@ function summarizeSystem(
 
 export function buildCurrentControlFeed(payload: VerifierScoreboardPayload): LogEntry[] {
   const tribeNameById = Object.fromEntries(payload.tribeScores.map((tribe) => [tribe.id, tribe.name]));
+  const tickTimestamp = payload.lastTickMs ?? Date.now();
 
   return payload.systems.map((system) => {
     const summary = summarizeSystem(system, tribeNameById);
 
     return {
-      id: `${system.id}-${payload.lastTickMs}`,
-      timestamp: payload.lastTickMs,
+      id: `${system.id}-${tickTimestamp}`,
+      timestamp: tickTimestamp,
       text: summary.text,
       tribe: summary.tribe,
       type: summary.type,

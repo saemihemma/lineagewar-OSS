@@ -5,6 +5,8 @@ import path from "node:path";
 import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 import { buildAuditSummary, writeVerifierArtifacts } from "./artifact-output.js";
 import { buildScoreboardPayload } from "./frontend-output.js";
+import { GraphqlAssemblyResolutionError } from "./graphql-assembly-source.js";
+import { hashCanonicalSnapshot } from "./hash.js";
 import { submitResolveWarWithRetry, type ResolutionResult } from "./on-chain-resolve.js";
 import { RegistryBackedVerifierDataSource } from "./registry-source.js";
 import { resolveTick } from "./resolver.js";
@@ -12,13 +14,59 @@ import { loadSystemDisplayConfigs } from "./system-display-config.js";
 import { TickLedger, type CommittedTick } from "./tick-ledger.js";
 import { buildTickPlan } from "./tick-planner.js";
 import { discoverWarConfig, refreshWarState, type DiscoveredWarConfig } from "./discover-war-config.js";
-import type { ResolvedTickResult, VerifierConfig } from "./types.js";
+import type {
+  ResolvedTickResult,
+  TickPlanEntry,
+  TickResolutionMetadata,
+  TickStatus,
+  VerifierConfig,
+  VerifierDataSource,
+} from "./types.js";
 
 console.log(`[verifier] All modules loaded successfully.`);
 
 const PAUSED_POLL_MS = 5 * 60_000;
 const TICK_BUFFER_MS = 30_000;
 const MAX_CATCHUP_TICKS = 48;
+const WAR_POLL_MS = 5 * 60_000;
+
+type VerifierRuntimeState = "discovering" | "running" | "waiting" | "resolved";
+
+interface RuntimeStatus {
+  state: VerifierRuntimeState;
+  warId: number | null;
+  tickRateMinutes: number;
+  lastTickMs: number | null;
+  nextTickMs: number | null;
+}
+
+interface NotifyHint {
+  warId?: number;
+  txDigest?: string;
+  reason?: string;
+  receivedAtMs: number;
+}
+
+interface TickRunOutcome {
+  resolved: ResolvedTickResult[];
+  tickStatus: TickStatus | null;
+  degradedReason: string | null;
+  carriedForwardFromTickMs: number | null;
+  lastTickMs: number | null;
+}
+
+let notifyResolve: (() => void) | null = null;
+let refreshResolve: (() => void) | null = null;
+let latestNotifyHint: NotifyHint | null = null;
+let activeShutdownHandler: (() => Promise<void>) | null = null;
+let signalHandlersRegistered = false;
+const runtimeStatus: RuntimeStatus = {
+  state: "discovering",
+  warId: null,
+  tickRateMinutes: 60,
+  lastTickMs: null,
+  nextTickMs: null,
+};
 
 function envString(name: string, fallback: string): string {
   return process.env[name] || fallback;
@@ -51,6 +99,195 @@ function formatDuration(ms: number): string {
   if (m > 0) parts.push(`${m}m`);
   if (s > 0 || parts.length === 0) parts.push(`${s}s`);
   return parts.join(" ");
+}
+
+function defaultRuntimeOutputPath(): string {
+  return path.resolve(process.cwd(), "runtime/verifier/latest.json");
+}
+
+function currentNotifyHint(): NotifyHint | null {
+  return latestNotifyHint ? { ...latestNotifyHint } : null;
+}
+
+function rememberNotifyHint(hint: Omit<NotifyHint, "receivedAtMs">): NotifyHint {
+  latestNotifyHint = {
+    ...hint,
+    receivedAtMs: Date.now(),
+  };
+  return latestNotifyHint;
+}
+
+function maybeClearNotifyHintForWar(warId: number): void {
+  if (latestNotifyHint?.warId === warId) {
+    latestNotifyHint = null;
+  }
+}
+
+function triggerNotify(): void {
+  if (notifyResolve) {
+    notifyResolve();
+    notifyResolve = null;
+  }
+  if (refreshResolve) {
+    refreshResolve();
+    refreshResolve = null;
+  }
+}
+
+function waitForRefresh(): Promise<void> {
+  return new Promise((resolve) => {
+    refreshResolve = resolve;
+  });
+}
+
+function waitForNotifyOrTimeout(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => { notifyResolve = null; resolve(); }, ms);
+    notifyResolve = () => { clearTimeout(timer); resolve(); };
+  });
+}
+
+function ensureSignalHandlers(): void {
+  if (signalHandlersRegistered) {
+    return;
+  }
+
+  const shutdown = (): void => {
+    void (async () => {
+      try {
+        await activeShutdownHandler?.();
+      } finally {
+        process.exit(0);
+      }
+    })();
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+  signalHandlersRegistered = true;
+}
+
+function isGraphqlResolutionFailure(error: unknown): boolean {
+  if (error instanceof GraphqlAssemblyResolutionError) {
+    return true;
+  }
+  if (error instanceof Error && "cause" in error) {
+    return isGraphqlResolutionFailure((error as Error & { cause?: unknown }).cause);
+  }
+  return false;
+}
+
+function resolutionMetadata(
+  tickStatus: TickStatus,
+  resolutionSource: TickResolutionMetadata["resolutionSource"],
+  degradedReason: string | null,
+  carriedForwardFromTickMs: number | null,
+): TickResolutionMetadata {
+  return {
+    tickStatus,
+    resolutionSource,
+    degradedReason,
+    carriedForwardFromTickMs,
+  };
+}
+
+function latestResolvedForSystem(
+  entries: ResolvedTickResult[],
+  systemId: number,
+  beforeTickMs: number,
+): ResolvedTickResult | null {
+  const matches = entries
+    .filter((entry) => entry.snapshot.systemId === systemId && entry.snapshot.tickTimestampMs < beforeTickMs)
+    .sort((a, b) => b.snapshot.tickTimestampMs - a.snapshot.tickTimestampMs);
+  return matches[0] ?? null;
+}
+
+function buildCarriedForwardTick(
+  prior: ResolvedTickResult,
+  tickTimestampMs: number,
+  degradedReason: string,
+): ResolvedTickResult {
+  const cloned = structuredClone(prior);
+  const metadata = resolutionMetadata(
+    "degraded_frozen",
+    "carried_forward",
+    degradedReason,
+    prior.snapshot.tickTimestampMs,
+  );
+
+  cloned.snapshot.tickTimestampMs = tickTimestampMs;
+  cloned.snapshot.resolutionMetadata = metadata;
+  cloned.commitment.tickTimestampMs = tickTimestampMs;
+  cloned.commitment.resolutionMetadata = metadata;
+  cloned.resolution.tickTimestampMs = tickTimestampMs;
+  cloned.presenceRows = cloned.presenceRows.map((row) => ({
+    ...row,
+    tickTimestampMs,
+  }));
+  const snapshotHash = hashCanonicalSnapshot(cloned.snapshot);
+  cloned.commitment.snapshotHash = snapshotHash;
+  return cloned;
+}
+
+async function buildDegradedPlaceholderTick(
+  dataSource: VerifierDataSource,
+  tick: TickPlanEntry,
+  degradedReason: string,
+): Promise<ResolvedTickResult> {
+  const placeholderDataSource: VerifierDataSource = {
+    getWarConfigAt: (timestampMs) => dataSource.getWarConfigAt(timestampMs),
+    getActivePhaseAt: (timestampMs) => dataSource.getActivePhaseAt(timestampMs),
+    getSystemConfigAt: (systemId, timestampMs) => dataSource.getSystemConfigAt(systemId, timestampMs),
+    getCandidateAssemblies: async () => [],
+    getPreviousController: (systemId, timestampMs) => dataSource.getPreviousController(systemId, timestampMs),
+    getAuditInputSummary: dataSource.getAuditInputSummary?.bind(dataSource),
+  };
+  const base = await resolveTick(placeholderDataSource, tick);
+  const metadata = resolutionMetadata("degraded_frozen", "degraded_placeholder", degradedReason, null);
+  const snapshot = {
+    ...base.snapshot,
+    resolutionMetadata: metadata,
+  };
+  const commitment = {
+    ...base.commitment,
+    snapshotHash: hashCanonicalSnapshot(snapshot),
+    resolutionMetadata: metadata,
+  };
+
+  return {
+    ...base,
+    snapshot,
+    commitment,
+  };
+}
+
+async function discoverPreferredWar(
+  packageId: string,
+  rpcUrl: string,
+  preferredWarId?: number | null,
+): Promise<DiscoveredWarConfig> {
+  if (preferredWarId != null) {
+    try {
+      const hinted = await discoverWarConfig({
+        packageId,
+        rpcUrl,
+        warId: preferredWarId,
+      });
+      if (!hinted.warResolved) {
+        return hinted;
+      }
+    } catch (error) {
+      console.warn(
+        `Preferred war ${preferredWarId} could not be discovered yet: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  return discoverWarConfig({
+    packageId,
+    rpcUrl,
+    warId: null,
+  });
 }
 
 function buildVerifierConfig(
@@ -110,6 +347,58 @@ function buildVerifierConfig(
   };
 }
 
+async function writeBootstrapScoreboard(
+  discovered: DiscoveredWarConfig,
+  outputPath: string,
+  tickRateMinutes: number,
+): Promise<void> {
+  const tribeScores = discovered.participatingTribeIds.map((id, index) => ({
+    id,
+    name: discovered.tribeNames[String(id)] ?? `Tribe ${id}`,
+    points: 0,
+    color: `var(--tribe-${String.fromCharCode(97 + index)})`,
+  }));
+  const initialEnvelope = {
+    tickStatus: null,
+    degradedReason: null,
+    carriedForwardFromTickMs: null,
+    config: {
+      source: "live-chain",
+      warId: discovered.warId,
+      tickStartMs: Date.now(),
+      tickCount: 0,
+      phaseStatusWithheld: false,
+      tickStatus: null,
+      degradedReason: null,
+      carriedForwardFromTickMs: null,
+    },
+    tickPlan: [],
+    commitments: [],
+    snapshots: [],
+    scoreboard: {
+      warName: discovered.warDisplayName || `War ${discovered.warId}`,
+      lastTickMs: null,
+      tickRateMinutes,
+      tribeScores,
+      systems: [],
+      chartData: [],
+      chartSeries: tribeScores.map((tribeScore) => ({
+        tribeId: tribeScore.id,
+        dataKey: `tribe_${tribeScore.id}`,
+        name: tribeScore.name,
+        color: tribeScore.color,
+      })),
+      commitments: [],
+      snapshots: [],
+    },
+    systemDisplayConfigs: [],
+  };
+
+  const { mkdirSync, writeFileSync } = await import("node:fs");
+  mkdirSync(path.dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, JSON.stringify(initialEnvelope, null, 2) + "\n", "utf8");
+}
+
 async function runTick(
   config: VerifierConfig,
   discovered: DiscoveredWarConfig,
@@ -118,7 +407,7 @@ async function runTick(
   historicalTickCount: number,
   ledger: TickLedger | null,
   warEndMs?: number | null,
-): Promise<ResolvedTickResult[]> {
+): Promise<TickRunOutcome> {
   const now = Date.now();
   const tickMs = tickMinutes * 60_000;
   const currentTickBoundary = alignTick(now, tickMinutes);
@@ -168,7 +457,7 @@ async function runTick(
   }
 
   // Start with full ledger history -- scores are permanent regardless of tick rate changes
-  const resolved: ResolvedTickResult[] = [...committedMap.values()];
+  let resolved: ResolvedTickResult[] = [...committedMap.values()];
   const newlyResolved: CommittedTick[] = [];
   const corrections: Array<{
     systemId: number;
@@ -179,6 +468,10 @@ async function runTick(
     correctedPoints: number;
     correctedAt: string;
   }> = [];
+  const ticksToResolve: TickPlanEntry[] = [];
+  let tickStatus: TickStatus | null = null;
+  let degradedReason: string | null = null;
+  let carriedForwardFromTickMs: number | null = null;
 
   // Only resolve NEW ticks from the plan that aren't already in the ledger
   for (const tick of tickPlan) {
@@ -189,22 +482,30 @@ async function runTick(
     if (inLedger && !isCurrentTick) {
       continue;
     }
+    ticksToResolve.push(tick);
+  }
 
-    const result = await resolveTick(dataSource, tick);
+  try {
+    for (const tick of ticksToResolve) {
+      const key = `${tick.systemId}:${tick.tickTimestampMs}`;
+      const isCurrentTick = tick.tickTimestampMs === currentTickBoundary;
+      const inLedger = committedMap.has(key);
+      const result = await resolveTick(dataSource, tick);
+      tickStatus = result.snapshot.resolutionMetadata.tickStatus;
 
-    if (inLedger) {
-      const idx = resolved.findIndex(
-        (r) => r.snapshot.systemId === tick.systemId && r.snapshot.tickTimestampMs === tick.tickTimestampMs,
-      );
-      if (idx >= 0) resolved[idx] = result;
-      else resolved.push(result);
-    } else {
-      resolved.push(result);
-    }
+      if (inLedger) {
+        const idx = resolved.findIndex(
+          (entry) => entry.snapshot.systemId === tick.systemId && entry.snapshot.tickTimestampMs === tick.tickTimestampMs,
+        );
+        if (idx >= 0) resolved[idx] = result;
+        else resolved.push(result);
+      } else {
+        resolved.push(result);
+      }
 
-    if (!isCurrentTick && tick.tickTimestampMs < currentTickBoundary && !inLedger) {
-      const totalPoints = result.snapshot.pointsAwarded.reduce((sum, a) => sum + a.points, 0);
-      corrections.push({
+      if (!isCurrentTick && tick.tickTimestampMs < currentTickBoundary && !inLedger) {
+        const totalPoints = result.snapshot.pointsAwarded.reduce((sum, award) => sum + award.points, 0);
+        corrections.push({
         systemId: tick.systemId,
         tickTimestampMs: tick.tickTimestampMs,
         previousState: null,
@@ -213,19 +514,61 @@ async function runTick(
         correctedPoints: totalPoints,
         correctedAt: new Date().toISOString(),
       });
-      console.log(
+        console.log(
         `  Correction: system ${tick.systemId} tick ${new Date(tick.tickTimestampMs).toISOString()} ` +
         `re-resolved as ${result.snapshot.state} (${totalPoints} pts) — previous ledger entry was deleted`,
       );
+      }
+
+      newlyResolved.push({
+        warId: config.warId,
+        systemId: tick.systemId,
+        tickTimestampMs: tick.tickTimestampMs,
+        resolved: result,
+        committedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    if (!isGraphqlResolutionFailure(error)) {
+      throw error;
     }
 
-    newlyResolved.push({
-      warId: config.warId,
-      systemId: tick.systemId,
-      tickTimestampMs: tick.tickTimestampMs,
-      resolved: result,
-      committedAt: new Date(),
-    });
+    degradedReason =
+      error instanceof Error
+        ? error.message
+        : "GraphQL ownership resolution failed after retries";
+    tickStatus = "degraded_frozen";
+    resolved = [...committedMap.values()];
+    newlyResolved.length = 0;
+
+    console.error(`  GraphQL ownership resolution failed. Freezing ${ticksToResolve.length} tick(s).`);
+    console.error(`  Reason: ${degradedReason}`);
+
+    for (const tick of ticksToResolve) {
+      const prior = latestResolvedForSystem(resolved, tick.systemId, tick.tickTimestampMs);
+      const degradedResult = prior
+        ? buildCarriedForwardTick(prior, tick.tickTimestampMs, degradedReason)
+        : await buildDegradedPlaceholderTick(dataSource, tick, degradedReason);
+
+      carriedForwardFromTickMs ??= degradedResult.snapshot.resolutionMetadata.carriedForwardFromTickMs;
+
+      const idx = resolved.findIndex(
+        (entry) => entry.snapshot.systemId === tick.systemId && entry.snapshot.tickTimestampMs === tick.tickTimestampMs,
+      );
+      if (idx >= 0) {
+        resolved[idx] = degradedResult;
+      } else {
+        resolved.push(degradedResult);
+      }
+
+      newlyResolved.push({
+        warId: config.warId,
+        systemId: tick.systemId,
+        tickTimestampMs: tick.tickTimestampMs,
+        resolved: degradedResult,
+        committedAt: new Date(),
+      });
+    }
   }
 
   if (ledger && newlyResolved.length > 0) {
@@ -246,15 +589,22 @@ async function runTick(
     resolved.map((e) => e.snapshot),
     resolved.map((e) => e.commitment),
     tribeNameOverrides,
+    discovered.participatingTribeIds,
   );
 
   const envelope = {
+    tickStatus,
+    degradedReason,
+    carriedForwardFromTickMs,
     config: {
       source: "live-chain",
       warId: config.warId,
       tickStartMs,
       tickCount: historicalTickCount,
       phaseStatusWithheld: config.phaseStatusWithheld,
+      tickStatus,
+      degradedReason,
+      carriedForwardFromTickMs,
     },
     tickPlan,
     commitments: resolved.map((e) => e.commitment),
@@ -285,7 +635,13 @@ async function runTick(
     console.log("  No ticks resolved (no active systems in current phase?)");
   }
 
-  return resolved;
+  return {
+    resolved,
+    tickStatus,
+    degradedReason,
+    carriedForwardFromTickMs,
+    lastTickMs: resolved.length > 0 ? resolved[resolved.length - 1].snapshot.tickTimestampMs : null,
+  };
 }
 
 async function runWarLoop(
@@ -345,6 +701,11 @@ async function runWarLoop(
 
   let currentTickMinutes = discovered.defaultTickMinutes;
   let currentConfig = buildVerifierConfig(discovered, rpcUrl, graphqlUrl, outputPath);
+  runtimeStatus.state = "running";
+  runtimeStatus.warId = discovered.warId;
+  runtimeStatus.tickRateMinutes = currentTickMinutes;
+  runtimeStatus.lastTickMs = null;
+  runtimeStatus.nextTickMs = null;
 
   // Initialize tick ledger (PostgreSQL persistence)
   const databaseUrl = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL || null;
@@ -358,46 +719,23 @@ async function runWarLoop(
   }
 
   // Write initial scoreboard immediately so the frontend has fresh war data
-  {
-    const tribeScores = discovered.participatingTribeIds.map((id) => ({
-      id,
-      name: discovered.tribeNames[String(id)] ?? `Tribe ${id}`,
-      points: 0,
-      color: `var(--tribe-${String.fromCharCode(97 + discovered.participatingTribeIds.indexOf(id))})`,
-    }));
-    const initialEnvelope = {
-      config: { source: "live-chain", warId: discovered.warId, tickStartMs: Date.now(), tickCount: 0, phaseStatusWithheld: false },
-      tickPlan: [],
-      commitments: [],
-      snapshots: [],
-      scoreboard: {
-        warName: discovered.warDisplayName || `War ${discovered.warId}`,
-        lastTickMs: null,
-        tickRateMinutes: currentTickMinutes,
-        tribeScores,
-        systems: [],
-        chartData: [],
-        chartSeries: tribeScores.map((ts) => ({
-          tribeId: ts.id,
-          dataKey: `tribe_${ts.id}`,
-          name: ts.name,
-          color: ts.color,
-        })),
-        commitments: [],
-        snapshots: [],
-      },
-      systemDisplayConfigs: [],
-    };
-    const { mkdirSync, writeFileSync } = await import("node:fs");
-    mkdirSync(path.dirname(outputPath), { recursive: true });
-    writeFileSync(outputPath, JSON.stringify(initialEnvelope, null, 2) + "\n", "utf8");
-    console.log(`Wrote initial scoreboard for War ${discovered.warId} to ${outputPath}`);
-  }
+  await writeBootstrapScoreboard(discovered, outputPath, currentTickMinutes);
+  console.log(`Wrote initial scoreboard for War ${discovered.warId} to ${outputPath}`);
+  runtimeStatus.lastTickMs = null;
 
   // Initial tick (only if configs exist)
   if (hasConfigs) {
     console.log(`Running initial tick (up to ${maxHistory} historical ticks)...`);
-    await runTick(currentConfig, discovered, outputPath, currentTickMinutes, maxHistory, ledger, discovered.endedAtMs);
+    const initialOutcome = await runTick(
+      currentConfig,
+      discovered,
+      outputPath,
+      currentTickMinutes,
+      maxHistory,
+      ledger,
+      discovered.endedAtMs,
+    );
+    runtimeStatus.lastTickMs = initialOutcome.lastTickMs;
     console.log(`Wrote scoreboard to ${outputPath}`);
   }
 
@@ -415,6 +753,10 @@ async function runWarLoop(
     const tickMs = currentTickMinutes * 60_000;
     const nextBoundary = alignTick(now, currentTickMinutes) + tickMs;
     const sleepMs = Math.max(1000, nextBoundary + TICK_BUFFER_MS - now);
+    runtimeStatus.state = "running";
+    runtimeStatus.warId = discovered.warId;
+    runtimeStatus.tickRateMinutes = currentTickMinutes;
+    runtimeStatus.nextTickMs = nextBoundary;
 
     console.log(`\nNext tick at ${new Date(nextBoundary).toISOString()} (in ${formatDuration(sleepMs)})`);
 
@@ -438,6 +780,27 @@ async function runWarLoop(
   const cycle = async (): Promise<void> => {
     console.log(`\n[${new Date().toISOString()}] Running tick cycle...`);
 
+    const hintedWarId = currentNotifyHint()?.warId ?? null;
+    if (warIdOverride == null && hintedWarId != null && hintedWarId !== discovered.warId) {
+      try {
+        const hintedWar = await discoverWarConfig({
+          packageId,
+          rpcUrl,
+          warId: hintedWarId,
+        });
+        if (!hintedWar.warResolved) {
+          console.log(`  Notify hint requested handoff from War ${discovered.warId} to War ${hintedWar.warId}.`);
+          if (timer) clearTimeout(timer);
+          if (ledger) await ledger.close();
+          maybeClearNotifyHintForWar(hintedWar.warId);
+          await runWarLoop(hintedWar, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false);
+          return;
+        }
+      } catch (error) {
+        console.error(`  Notify-hinted war handoff failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     // Re-check war state and config changes
     const freshState = await refreshWarState({
       packageId,
@@ -447,10 +810,35 @@ async function runWarLoop(
       warConfigIds: discovered.warConfigIds,
       phaseConfigIds: discovered.phaseConfigIds,
     });
+    const rediscovered = await discoverWarConfig({
+      packageId,
+      rpcUrl,
+      warId: discovered.warId,
+    });
+    discovered.warConfigIds = rediscovered.warConfigIds;
+    discovered.phaseConfigIds = rediscovered.phaseConfigIds;
+    discovered.systemConfigIds = rediscovered.systemConfigIds;
+    discovered.warSystemIds = rediscovered.warSystemIds;
+    discovered.participatingTribeIds = rediscovered.participatingTribeIds;
+    discovered.tribeNames = rediscovered.tribeNames;
+    discovered.defaultTickMinutes = rediscovered.defaultTickMinutes;
+    currentConfig.chain.participatingTribeIds = rediscovered.participatingTribeIds;
+    currentConfig.chain.warSystemIds = rediscovered.warSystemIds;
 
     if (freshState.resolved) {
+      runtimeStatus.state = "resolved";
+      runtimeStatus.nextTickMs = null;
       console.log("War already resolved on chain. Writing final scoreboard.");
-      await runTick(currentConfig, discovered, outputPath, currentTickMinutes, maxHistory, ledger, freshState.endedAtMs);
+      const finalOutcome = await runTick(
+        currentConfig,
+        discovered,
+        outputPath,
+        currentTickMinutes,
+        maxHistory,
+        ledger,
+        freshState.endedAtMs,
+      );
+      runtimeStatus.lastTickMs = finalOutcome.lastTickMs;
       console.log("Final scoreboard written.");
       if (ledger) await ledger.close();
       if (warIdOverride != null) {
@@ -466,6 +854,7 @@ async function runWarLoop(
       console.log(`War ended at ${new Date(freshState.endedAtMs).toISOString()}. Running final tick and resolving on chain...`);
 
       const finalResults = await runTick(currentConfig, discovered, outputPath, currentTickMinutes, maxHistory, ledger, freshState.endedAtMs);
+      runtimeStatus.lastTickMs = finalResults.lastTickMs;
       console.log("Final scoreboard written.");
 
       const adminPrivateKey = process.env.LINEAGE_ADMIN_PRIVATE_KEY;
@@ -477,7 +866,7 @@ async function runWarLoop(
       }
 
       const allScoreMap = new Map<number, number>();
-      for (const r of finalResults) {
+      for (const r of finalResults.resolved) {
         for (const award of r.snapshot.pointsAwarded) {
           allScoreMap.set(award.tribeId, (allScoreMap.get(award.tribeId) ?? 0) + award.points);
         }
@@ -641,6 +1030,8 @@ async function runWarLoop(
     }
 
     if (!freshState.enabled) {
+      runtimeStatus.state = "waiting";
+      runtimeStatus.nextTickMs = Date.now() + PAUSED_POLL_MS;
       console.log(`War is paused. Polling again in ${formatDuration(PAUSED_POLL_MS)}...`);
       timer = setTimeout(() => {
         void cycle().catch((err) => {
@@ -678,6 +1069,12 @@ async function runWarLoop(
     const readyToScore = freshState.systemConfigIds.length > 0;
 
     if (!readyToScore) {
+      await writeBootstrapScoreboard(discovered, outputPath, currentTickMinutes);
+      runtimeStatus.state = "waiting";
+      runtimeStatus.tickRateMinutes = currentTickMinutes;
+      runtimeStatus.lastTickMs = null;
+      runtimeStatus.nextTickMs = Date.now() + 60_000;
+      console.log("  Bootstrap scoreboard refreshed while waiting for configs.");
       console.log("  Still waiting for configs to be published. Polling again in 1m...");
       timer = setTimeout(() => {
         void cycle().catch((err) => {
@@ -700,7 +1097,18 @@ async function runWarLoop(
     const currentBoundary = alignTick(now, currentTickMinutes);
     const historyCount = Math.min(maxHistory, Math.max(1, Math.floor((now - (currentBoundary - (maxHistory - 1) * tickMs)) / tickMs)));
 
-    await runTick(currentConfig, discovered, outputPath, currentTickMinutes, Math.min(historyCount, maxHistory), ledger, freshState.endedAtMs);
+    const tickOutcome = await runTick(
+      currentConfig,
+      discovered,
+      outputPath,
+      currentTickMinutes,
+      Math.min(historyCount, maxHistory),
+      ledger,
+      freshState.endedAtMs,
+    );
+    runtimeStatus.state = tickOutcome.tickStatus === "degraded_frozen" ? "waiting" : "running";
+    runtimeStatus.tickRateMinutes = currentTickMinutes;
+    runtimeStatus.lastTickMs = tickOutcome.lastTickMs;
     console.log(`  Scoreboard updated.`);
 
     scheduleNext();
@@ -708,55 +1116,35 @@ async function runWarLoop(
 
   scheduleNext();
 
-  const shutdown = (): void => {
+  activeShutdownHandler = async (): Promise<void> => {
     console.log("\nShutting down verifier loop...");
     if (timer) clearTimeout(timer);
-    if (ledger) void ledger.close().finally(() => process.exit(0));
-    else process.exit(0);
+    if (ledger) {
+      await ledger.close();
+    }
   };
-
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
 
   console.log("\nLive chain verifier loop started. Press Ctrl+C to stop.");
 }
 
-const WAR_POLL_MS = 5 * 60_000;
-
-let notifyResolve: (() => void) | null = null;
-let refreshResolve: (() => void) | null = null;
-
-function triggerNotify(): void {
-  if (notifyResolve) {
-    notifyResolve();
-    notifyResolve = null;
-  }
-  if (refreshResolve) {
-    refreshResolve();
-    refreshResolve = null;
-  }
-}
-
-function waitForRefresh(): Promise<void> {
-  return new Promise((resolve) => {
-    refreshResolve = resolve;
-  });
-}
-
-function waitForNotifyOrTimeout(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => { notifyResolve = null; resolve(); }, ms);
-    notifyResolve = () => { clearTimeout(timer); resolve(); };
-  });
-}
-
-async function startHttpServer(getStatus: () => Record<string, unknown>): Promise<void> {
+async function startHttpServer(
+  getStatus: () => Record<string, unknown>,
+  verifierArtifactDir: string,
+): Promise<void> {
   const http = await import("node:http");
   const fs = await import("node:fs");
   const port = envNumber("LINEAGE_VERIFIER_PORT", Number(process.env.PORT) || 3001);
 
-  const adminDist = path.resolve(process.cwd(), "../admin/dist");
-  const scoreDist = path.resolve(process.cwd(), "../scoreboard/dist");
+  const adminDistCandidates = [
+    path.resolve(process.cwd(), "admin/dist"),
+    path.resolve(process.cwd(), "../admin/dist"),
+  ];
+  const scoreDistCandidates = [
+    path.resolve(process.cwd(), "scoreboard/dist"),
+    path.resolve(process.cwd(), "../scoreboard/dist"),
+  ];
+  const adminDist = adminDistCandidates.find((candidate) => fs.existsSync(candidate)) ?? adminDistCandidates[0];
+  const scoreDist = scoreDistCandidates.find((candidate) => fs.existsSync(candidate)) ?? scoreDistCandidates[0];
   const hasAdminDist = fs.existsSync(adminDist);
   const hasScoreDist = fs.existsSync(scoreDist);
   if (hasAdminDist) console.log(`  Serving admin panel from ${adminDist}`);
@@ -768,7 +1156,18 @@ async function startHttpServer(getStatus: () => Record<string, unknown>): Promis
     ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff",
   };
 
-  function serveStatic(baseDir: string, urlPath: string, res: import("node:http").ServerResponse): boolean {
+  const noStoreHeaders = {
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+
+  function serveStatic(
+    baseDir: string,
+    urlPath: string,
+    res: import("node:http").ServerResponse,
+    extraHeaders: Record<string, string> = {},
+  ): boolean {
     const safePath = urlPath.replace(/\.\./g, "").replace(/\/+/g, "/");
     let filePath = path.join(baseDir, safePath);
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
@@ -776,7 +1175,28 @@ async function startHttpServer(getStatus: () => Record<string, unknown>): Promis
     }
     if (!fs.existsSync(filePath)) return false;
     const ext = path.extname(filePath);
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    res.writeHead(200, {
+      "Content-Type": MIME[ext] || "application/octet-stream",
+      ...extraHeaders,
+    });
+    fs.createReadStream(filePath).pipe(res);
+    return true;
+  }
+
+  function serveVerifierArtifact(urlPath: string, res: import("node:http").ServerResponse): boolean {
+    const safePath = urlPath.replace(/^\/verifier\/?/, "").replace(/\.\./g, "").replace(/\/+/g, "/");
+    const relativePath = safePath.length > 0 ? safePath : "latest.json";
+    const filePath = path.join(verifierArtifactDir, relativePath);
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      return false;
+    }
+
+    const ext = path.extname(filePath);
+    const extraHeaders = ext === ".json" ? noStoreHeaders : {};
+    res.writeHead(200, {
+      "Content-Type": MIME[ext] || "application/octet-stream",
+      ...extraHeaders,
+    });
     fs.createReadStream(filePath).pipe(res);
     return true;
   }
@@ -785,16 +1205,49 @@ async function startHttpServer(getStatus: () => Record<string, unknown>): Promis
     const url = req.url || "/";
 
     if (req.method === "GET" && url === "/status") {
-      res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        ...noStoreHeaders,
+      });
       res.end(JSON.stringify(getStatus(), null, 2));
       return;
     }
 
     if (req.method === "POST" && url === "/notify") {
+      const bodyChunks: Buffer[] = [];
       console.log(`\n[${new Date().toISOString()}] Received /notify — triggering war re-discovery`);
-      triggerNotify();
-      res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
-      res.end(JSON.stringify({ ok: true, message: "Re-discovery triggered" }));
+      req.on("data", (chunk) => bodyChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      req.on("end", () => {
+        let payload: { warId?: number; txDigest?: string; reason?: string } = {};
+        const raw = Buffer.concat(bodyChunks).toString("utf8").trim();
+        if (raw.length > 0) {
+          try {
+            const parsed = JSON.parse(raw) as Record<string, unknown>;
+            payload = {
+              warId: Number.isFinite(Number(parsed.warId)) ? Number(parsed.warId) : undefined,
+              txDigest: typeof parsed.txDigest === "string" ? parsed.txDigest : undefined,
+              reason: typeof parsed.reason === "string" ? parsed.reason : undefined,
+            };
+          } catch {
+            res.writeHead(400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+            res.end(JSON.stringify({ ok: false, error: "Invalid JSON body" }));
+            return;
+          }
+        }
+
+        const hint = rememberNotifyHint(payload);
+        console.log(
+          `\n[${new Date().toISOString()}] Received /notify for war ${hint.warId ?? "auto"} (${hint.reason ?? "unspecified"})`,
+        );
+        triggerNotify();
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          ...noStoreHeaders,
+        });
+        res.end(JSON.stringify({ ok: true, message: "Re-discovery triggered", hint }));
+      });
       return;
     }
 
@@ -809,6 +1262,12 @@ async function startHttpServer(getStatus: () => Record<string, unknown>): Promis
     }
 
     if (req.method === "GET") {
+      if (url.startsWith("/verifier")) {
+        if (serveVerifierArtifact(url, res)) return;
+        res.writeHead(404, { "Content-Type": "application/json", ...noStoreHeaders });
+        res.end(JSON.stringify({ error: "Live verifier artifact not found" }));
+        return;
+      }
       if (hasAdminDist && url.startsWith("/admin")) {
         const subPath = url.slice("/admin".length) || "/";
         if (serveStatic(adminDist, subPath, res)) return;
@@ -841,22 +1300,19 @@ async function pollForNextWar(
   }
 
   while (true) {
+    runtimeStatus.state = "waiting";
+    runtimeStatus.warId = null;
+    runtimeStatus.nextTickMs = Date.now() + WAR_POLL_MS;
     console.log(`\nWaiting for new war (notify via POST /notify, or auto-check every ${formatDuration(WAR_POLL_MS)})...`);
     await waitForNotifyOrTimeout(WAR_POLL_MS);
 
     try {
-      const discovered = await discoverWarConfig({
-        packageId,
-        rpcUrl,
-        warId: null,
-      });
+      const discovered = await discoverPreferredWar(packageId, rpcUrl, currentNotifyHint()?.warId ?? null);
 
       if (!discovered.warResolved) {
         console.log(`\nFound unresolved War ${discovered.warId}. Starting verifier loop...`);
-        const freshGraphqlUrl = process.env.LINEAGE_SUI_GRAPHQL_URL || null;
-        const freshOutputPath = process.env.LINEAGE_OUTPUT_PATH
-          || path.resolve(process.cwd(), "../scoreboard/public/verifier/latest.json");
-        await runWarLoop(discovered, packageId, rpcUrl, freshGraphqlUrl, freshOutputPath, maxHistory, false);
+        maybeClearNotifyHintForWar(discovered.warId);
+        await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false);
         return;
       }
     } catch (err) {
@@ -883,38 +1339,38 @@ async function main(): Promise<void> {
   const graphqlUrl = process.env.LINEAGE_SUI_GRAPHQL_URL || null;
   const warIdOverride = process.env.LINEAGE_WAR_ID ? Number(process.env.LINEAGE_WAR_ID) : null;
   const outputPath = process.env.LINEAGE_OUTPUT_PATH
-    || path.resolve(process.cwd(), "../scoreboard/public/verifier/latest.json");
+    || defaultRuntimeOutputPath();
   const maxHistory = envNumber("LINEAGE_MAX_HISTORY_TICKS", MAX_CATCHUP_TICKS);
 
-  let currentWarId: number | null = null;
-  let currentTickRate = 60;
-  let lastTickMs: number | null = null;
-  let nextTickMs: number | null = null;
-  let verifierState: "discovering" | "running" | "waiting" | "resolved" = "discovering";
+  ensureSignalHandlers();
 
   if (!once) {
     await startHttpServer(() => ({
-      state: verifierState,
-      warId: currentWarId,
-      tickRateMinutes: currentTickRate,
-      lastTickMs,
-      nextTickMs,
+      state: runtimeStatus.state,
+      warId: runtimeStatus.warId,
+      tickRateMinutes: runtimeStatus.tickRateMinutes,
+      lastTickMs: runtimeStatus.lastTickMs,
+      nextTickMs: runtimeStatus.nextTickMs,
       now: Date.now(),
-    }));
+      notifyHint: currentNotifyHint(),
+    }), path.dirname(outputPath));
   }
 
   console.log("Discovering war configuration from chain...");
 
   try {
-    const discovered = await discoverWarConfig({
-      packageId,
-      rpcUrl,
-      warId: warIdOverride && Number.isFinite(warIdOverride) ? warIdOverride : null,
-    });
+    const discovered = warIdOverride && Number.isFinite(warIdOverride)
+      ? await discoverWarConfig({
+        packageId,
+        rpcUrl,
+        warId: warIdOverride,
+      })
+      : await discoverPreferredWar(packageId, rpcUrl, currentNotifyHint()?.warId ?? null);
 
-    currentWarId = discovered.warId;
-    currentTickRate = discovered.defaultTickMinutes;
-    verifierState = "running";
+    runtimeStatus.warId = discovered.warId;
+    runtimeStatus.tickRateMinutes = discovered.defaultTickMinutes;
+    runtimeStatus.state = "running";
+    maybeClearNotifyHintForWar(discovered.warId);
 
     await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once, warIdOverride);
   } catch (err) {
@@ -925,7 +1381,9 @@ async function main(): Promise<void> {
       console.error("War discovery/loop failed:", msg);
       if (err instanceof Error && err.stack) console.error(err.stack);
     }
-    verifierState = "waiting";
+    runtimeStatus.state = "waiting";
+    runtimeStatus.warId = null;
+    runtimeStatus.nextTickMs = Date.now() + WAR_POLL_MS;
     await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once);
   }
 }

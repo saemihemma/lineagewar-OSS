@@ -4,6 +4,7 @@ import { discoverAssemblies } from "./assembly-discovery.js";
 import { OnChainConfigVerifierDataSource } from "./chain-source.js";
 import { resolveAssembliesViaGraphQL, type GraphqlAssemblyState } from "./graphql-assembly-source.js";
 import { queryLocationEvents } from "./location-event-query.js";
+import { loadSeededWorldResources } from "./seeded-world.js";
 import { TribeResolver } from "./tribe-resolver.js";
 import {
   AssemblySystemMappingDocument,
@@ -387,7 +388,7 @@ function resolveSystemLocation(
 }
 
 export class RegistryBackedVerifierDataSource extends OnChainConfigVerifierDataSource {
-  private readonly resources = { assemblySeeds: {} as Record<string, unknown>, objectIds: {} as Record<string, string>, scenarios: {} };
+  private readonly resources: SeededWorldResources = loadSeededWorldResources();
   private registryEntries: LiveAssemblyRegistryEntry[];
   private readonly systemIdByLocationHashHex: Map<string, number>;
   private readonly systemIdByAssemblyId: Map<string, number>;
@@ -423,11 +424,7 @@ export class RegistryBackedVerifierDataSource extends OnChainConfigVerifierDataS
 
     const graphqlUrl = this.config.chain.graphqlUrl;
     if (graphqlUrl) {
-      try {
-        return await this.getCandidateAssembliesViaGraphQL(systemId, graphqlUrl);
-      } catch (err) {
-        console.warn(`[registry] GraphQL assembly fetch failed, falling back to RPC:`, err);
-      }
+      return this.getCandidateAssembliesViaGraphQL(systemId, graphqlUrl);
     }
 
     return this.getCandidateAssembliesViaRpc(systemId);

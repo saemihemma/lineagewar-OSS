@@ -5,11 +5,55 @@ import { useAdminPortalState } from "../lib/admin-context";
 import { buildDraftPreview, buildTransactionForDraft, extractExecutionRecord } from "../lib/transactions";
 import { formatTimestamp, shortenId } from "../lib/utils";
 
-const VERIFIER_URL = import.meta.env.VITE_VERIFIER_URL || "";
+function getVerifierUrl(): string {
+  const configured = import.meta.env.VITE_VERIFIER_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") {
+    return window.location.origin.replace(/\/$/, "");
+  }
+  return "";
+}
 
-function notifyVerifier(): void {
-  if (!VERIFIER_URL) return;
-  fetch(`${VERIFIER_URL}/notify`, { method: "POST" }).catch(() => {});
+function extractNotifyWarId(draft: NonNullable<ReturnType<typeof useAdminPortalState>["draft"]>): number | undefined {
+  switch (draft.kind) {
+    case "create-war":
+    case "publish-defaults":
+    case "upsert-system-config":
+    case "schedule-system-change":
+    case "toggle-war":
+    case "commit-snapshot":
+    case "batch-phase-config":
+    case "end-war":
+    case "update-war-end-time":
+    case "cancel-war-end":
+    case "set-win-margin":
+    case "resolve-war":
+    case "register-tribe": {
+      const parsed = Number(draft.warId);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    }
+  }
+}
+
+function notifyVerifier(payload: { warId?: number; txDigest?: string; reason?: string }): void {
+  const verifierUrl = getVerifierUrl();
+  if (!verifierUrl) return;
+  fetch(`${verifierUrl}/notify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
+function extractCreatedWarAdminCapId(createdByType: Record<string, string[]>): string | null {
+  for (const [type, objectIds] of Object.entries(createdByType)) {
+    if (type.includes("::registry::WarAdminCap") && objectIds.length > 0) {
+      return objectIds[0];
+    }
+  }
+  return null;
 }
 
 const cardStyle: React.CSSProperties = {
@@ -27,7 +71,7 @@ export default function PreviewScreen() {
       options?: Record<string, unknown>;
     }) => Promise<unknown>;
   };
-  const { draft, setDraft, lastExecution, setLastExecution } = useAdminPortalState();
+  const { draft, setDraft, lastExecution, setLastExecution, setSelectedAdminCapId } = useAdminPortalState();
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "submitted">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -63,7 +107,18 @@ export default function PreviewScreen() {
       setLastExecution(execution);
       setSubmitState("submitted");
 
-      notifyVerifier();
+      if (draft.kind === "create-war") {
+        const createdWarAdminCapId = extractCreatedWarAdminCapId(execution.createdByType);
+        if (createdWarAdminCapId) {
+          setSelectedAdminCapId(createdWarAdminCapId);
+        }
+      }
+
+      notifyVerifier({
+        warId: extractNotifyWarId(draft),
+        txDigest: execution.digest,
+        reason: draft.kind,
+      });
       setDraft(null);
     } catch (error) {
       setSubmitState("idle");

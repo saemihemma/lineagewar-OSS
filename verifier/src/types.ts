@@ -17,6 +17,14 @@ export type StorageRequirementMode =
   | "MINIMUM_TOTAL_QUANTITY";
 
 export type ControlState = "NEUTRAL" | "CONTESTED" | "CONTROLLED";
+export type TickStatus = "live_resolved" | "degraded_frozen";
+
+export interface TickResolutionMetadata {
+  tickStatus: TickStatus;
+  resolutionSource: "live_resolution" | "carried_forward" | "degraded_placeholder";
+  degradedReason: string | null;
+  carriedForwardFromTickMs: number | null;
+}
 
 export interface WarConfigVersion {
   objectId?: string;
@@ -199,6 +207,7 @@ export interface CanonicalSnapshot {
     takeMargin: number;
     holdMargin: number;
   };
+  resolutionMetadata: TickResolutionMetadata;
 }
 
 export interface SnapshotCommitment {
@@ -209,6 +218,7 @@ export interface SnapshotCommitment {
   controllerTribeId: number | null;
   pointsAwarded: number;
   snapshotHash: string;
+  resolutionMetadata: TickResolutionMetadata;
 }
 
 export interface TickPlanEntry {
@@ -468,8 +478,12 @@ export interface ScoreboardChartSeries {
 
 export interface ScoreboardPayload {
   warName: string;
-  lastTickMs: number;
+  lastTickMs: number | null;
   tickRateMinutes?: number;
+  tickStatus?: TickStatus;
+  statusMessage?: string;
+  degradedReason?: string | null;
+  carriedForwardFromTickMs?: number | null;
   tribeScores: ScoreboardTribeScore[];
   systems: ScoreboardSystem[];
   chartData: ScoreboardHistoryPoint[];
@@ -509,6 +523,9 @@ export interface TickAuditArtifact {
   sourceMode: string;
   tickTimestampMs: number;
   warId: number;
+  tickStatus?: TickStatus;
+  degradedReason?: string | null;
+  carriedForwardFromTickMs?: number | null;
   tickPlan: TickPlanEntry[];
   commitments: SnapshotCommitment[];
   snapshots: CanonicalSnapshot[];

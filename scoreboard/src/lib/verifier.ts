@@ -45,6 +45,12 @@ export interface VerifierSnapshotCommitment {
   controllerTribeId: number | null;
   pointsAwarded: number;
   snapshotHash: string;
+  resolutionMetadata: {
+    tickStatus: "live_resolved" | "degraded_frozen";
+    resolutionSource: "live_resolution" | "carried_forward" | "degraded_placeholder";
+    degradedReason: string | null;
+    carriedForwardFromTickMs: number | null;
+  };
 }
 
 export interface VerifierPointAward {
@@ -90,12 +96,22 @@ export interface VerifierSnapshot {
     takeMargin: number;
     holdMargin: number;
   };
+  resolutionMetadata: {
+    tickStatus: "live_resolved" | "degraded_frozen";
+    resolutionSource: "live_resolution" | "carried_forward" | "degraded_placeholder";
+    degradedReason: string | null;
+    carriedForwardFromTickMs: number | null;
+  };
 }
 
 export interface VerifierScoreboardPayload {
   warName: string;
-  lastTickMs: number;
+  lastTickMs: number | null;
   tickRateMinutes?: number;
+  tickStatus?: "live_resolved" | "degraded_frozen";
+  statusMessage?: string;
+  degradedReason?: string | null;
+  carriedForwardFromTickMs?: number | null;
   tribeScores: VerifierTribeScore[];
   systems: VerifierSystemControl[];
   chartData: VerifierChartPoint[];
@@ -144,6 +160,9 @@ export interface VerifierAuditSummary {
 
 export interface VerifierScoreboardEnvelope {
   scoreboard: VerifierScoreboardPayload | null;
+  tickStatus?: "live_resolved" | "degraded_frozen";
+  degradedReason?: string | null;
+  carriedForwardFromTickMs?: number | null;
   config?: Record<string, unknown>;
   tickPlan?: VerifierTickPlanEntry[];
   commitments?: VerifierSnapshotCommitment[];
@@ -175,6 +194,9 @@ export interface VerifierTickAuditArtifact {
   sourceMode: string;
   tickTimestampMs: number;
   warId: number;
+  tickStatus?: "live_resolved" | "degraded_frozen";
+  degradedReason?: string | null;
+  carriedForwardFromTickMs?: number | null;
   tickPlan: VerifierTickPlanEntry[];
   commitments: VerifierSnapshotCommitment[];
   snapshots: VerifierSnapshot[];
@@ -252,7 +274,7 @@ export interface VerifierTickReceipt {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
+  const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load verifier data from ${url}`);
   }

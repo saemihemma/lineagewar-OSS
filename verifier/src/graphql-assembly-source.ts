@@ -10,6 +10,33 @@
  */
 
 const BATCH_SIZE = 20;
+const DEFAULT_MAX_ATTEMPTS = 5;
+const DEFAULT_TIMEOUT_MS = 8_000;
+const DEFAULT_CONCURRENCY = 3;
+
+function envNumber(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export class GraphqlAssemblyResolutionError extends Error {
+  readonly retryable: boolean;
+
+  constructor(message: string, retryable: boolean, cause?: unknown) {
+    super(message);
+    this.name = "GraphqlAssemblyResolutionError";
+    this.retryable = retryable;
+    if (cause !== undefined) {
+      this.cause = cause;
+    }
+  }
+}
 
 export interface GraphqlAssemblyState {
   assemblyId: string;
@@ -72,24 +99,129 @@ const CHARACTER_FRAGMENT = `
   }
 `;
 
-async function graphqlPost(graphqlUrl: string, query: string): Promise<GraphqlBatchResponse> {
-  const response = await fetch(graphqlUrl, {
+function buildRetryableStatus(status: number): boolean {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+function backoffDelayMs(attempt: number): number {
+  const cappedAttempt = Math.max(0, attempt - 1);
+  const base = Math.min(2_500, 250 * (2 ** cappedAttempt));
+  const jitter = Math.floor(Math.random() * 250);
+  return base + jitter;
+}
+
+async function graphqlPostOnce(graphqlUrl: string, query: string): Promise<GraphqlBatchResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), envNumber("LINEAGE_GRAPHQL_TIMEOUT_MS", DEFAULT_TIMEOUT_MS));
+
+  let response: Response;
+  try {
+    response = await fetch(graphqlUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),
-  });
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.name === "AbortError"
+        ? "GraphQL request timed out"
+        : `GraphQL request failed before response: ${error instanceof Error ? error.message : String(error)}`;
+    throw new GraphqlAssemblyResolutionError(message, true, error);
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
-    throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
+    throw new GraphqlAssemblyResolutionError(
+      `GraphQL request failed: ${response.status} ${response.statusText}`,
+      buildRetryableStatus(response.status),
+    );
   }
 
-  const payload = (await response.json()) as GraphqlBatchResponse;
-  if (payload.errors?.length) {
-    const msgs = payload.errors.map((e) => e.message ?? "unknown").join("; ");
-    throw new Error(`GraphQL errors: ${msgs}`);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    throw new GraphqlAssemblyResolutionError("GraphQL response was not valid JSON", false, error);
   }
 
-  return payload;
+  if (!payload || typeof payload !== "object") {
+    throw new GraphqlAssemblyResolutionError("GraphQL response body was malformed", false);
+  }
+
+  const typedPayload = payload as GraphqlBatchResponse;
+  if (!typedPayload.data && !typedPayload.errors) {
+    throw new GraphqlAssemblyResolutionError("GraphQL response did not include data or errors", false);
+  }
+
+  if (typedPayload.errors?.length) {
+    const msgs = typedPayload.errors.map((e) => e.message ?? "unknown").join("; ");
+    throw new GraphqlAssemblyResolutionError(`GraphQL errors: ${msgs}`, true);
+  }
+
+  return typedPayload;
+}
+
+async function graphqlPost(graphqlUrl: string, query: string): Promise<GraphqlBatchResponse> {
+  const maxAttempts = envNumber("LINEAGE_GRAPHQL_MAX_ATTEMPTS", DEFAULT_MAX_ATTEMPTS);
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await graphqlPostOnce(graphqlUrl, query);
+    } catch (error) {
+      lastError = error;
+      const typed =
+        error instanceof GraphqlAssemblyResolutionError
+          ? error
+          : new GraphqlAssemblyResolutionError(
+            error instanceof Error ? error.message : String(error),
+            true,
+            error,
+          );
+
+      if (!typed.retryable || attempt === maxAttempts) {
+        throw new GraphqlAssemblyResolutionError(
+          `GraphQL ownership resolution failed after ${attempt} attempt(s): ${typed.message}`,
+          typed.retryable,
+          typed,
+        );
+      }
+
+      await sleep(backoffDelayMs(attempt));
+    }
+  }
+
+  throw new GraphqlAssemblyResolutionError(
+    `GraphQL ownership resolution failed: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+    true,
+    lastError,
+  );
+}
+
+async function mapWithConcurrency<T, U>(
+  items: T[],
+  limit: number,
+  mapFn: (item: T, index: number) => Promise<U>,
+): Promise<U[]> {
+  const results = new Array<U>(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      if (currentIndex >= items.length) {
+        return;
+      }
+      results[currentIndex] = await mapFn(items[currentIndex], currentIndex);
+    }
+  }
+
+  const workerCount = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }
 
 function buildAliasQuery(ids: string[], fragment: string, prefix: string): string {
@@ -125,8 +257,10 @@ async function batchQuery<T>(
     chunks.push({ offset, count: chunk.length, query: buildAliasQuery(chunk, fragment, prefix) });
   }
 
-  const payloads = await Promise.all(
-    chunks.map((c) => graphqlPost(graphqlUrl, c.query)),
+  const payloads = await mapWithConcurrency(
+    chunks,
+    envNumber("LINEAGE_GRAPHQL_BATCH_CONCURRENCY", DEFAULT_CONCURRENCY),
+    (chunk) => graphqlPost(graphqlUrl, chunk.query),
   );
 
   const allResults: (T | null)[] = [];

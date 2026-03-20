@@ -45,10 +45,10 @@ async function getEffectiveSystemConfig(
       phase?.tickMinutesOverride ?? null,
       systemConfig.tickMinutesOverride,
     ),
-    takeMargin: systemConfig.takeMargin || warConfig.defaultTakeMargin,
-    holdMargin: systemConfig.holdMargin || warConfig.defaultHoldMargin,
+    takeMargin: systemConfig.takeMargin ?? warConfig.defaultTakeMargin,
+    holdMargin: systemConfig.holdMargin ?? warConfig.defaultHoldMargin,
     neutralMinTotalPresence:
-      systemConfig.neutralMinTotalPresence || warConfig.defaultNeutralMinTotalPresence,
+      systemConfig.neutralMinTotalPresence ?? warConfig.defaultNeutralMinTotalPresence,
     contestedWhenTied: systemConfig.contestedWhenTied,
     allowedAssemblyFamilies: systemConfig.allowedAssemblyFamilies,
     allowedAssemblyTypeIds: systemConfig.allowedAssemblyTypeIds,
@@ -344,6 +344,12 @@ function buildSnapshot(
       takeMargin: cfg.takeMargin,
       holdMargin: cfg.holdMargin,
     },
+    resolutionMetadata: {
+      tickStatus: "live_resolved",
+      resolutionSource: "live_resolution",
+      degradedReason: null,
+      carriedForwardFromTickMs: null,
+    },
   };
 }
 
@@ -383,6 +389,7 @@ export async function resolveTick(
       controllerTribeId: snapshot.controllerTribeId,
       pointsAwarded: snapshot.pointsAwarded.reduce((sum, item) => sum + item.points, 0),
       snapshotHash,
+      resolutionMetadata: snapshot.resolutionMetadata,
     },
     presenceRows,
     resolution,

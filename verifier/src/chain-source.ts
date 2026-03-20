@@ -333,7 +333,7 @@ export class OnChainConfigVerifierDataSource implements VerifierDataSource {
     };
   }
 
-  private extractResponseFields(response: { data?: { content?: unknown } }, objectId: string): MoveFields {
+  private extractResponseFields(response: { data?: { content?: unknown } | null }, objectId: string): MoveFields {
     const content = response.data?.content;
     if (!content || typeof content !== "object" || !("fields" in content)) {
       throw new Error(`Object ${objectId} did not return Move fields`);

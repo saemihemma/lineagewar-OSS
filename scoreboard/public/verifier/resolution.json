@@ -1,31 +1,4 @@
 {
-  "warResolutionObjectId": "0x167e5735cf5666d0aa37efc7ed401d4da194b00df07133344bd3412d9b08ea45",
-  "transactionDigest": "u2BtwHXyL7TLsYc18vR7QTPhvSY9SDTyRZoWX15jT6g",
-  "winner": {
-    "tribeId": 98000423,
-    "name": "PEACEFUL TRADE EMPIRE",
-    "points": 8
-  },
-  "runnerUp": {
-    "tribeId": 98000430,
-    "name": "WARTIME RELOADED",
-    "points": 0
-  },
-  "allScores": [
-    {
-      "tribeId": 98000423,
-      "name": "PEACEFUL TRADE EMPIRE",
-      "points": 8
-    },
-    {
-      "tribeId": 98000430,
-      "name": "WARTIME RELOADED",
-      "points": 0
-    }
-  ],
-  "isDraw": true,
-  "winMargin": 20,
-  "actualMargin": 8,
-  "endedAtMs": 1773842340000,
-  "resolvedAtMs": 1773842435035
+  "status": "standby",
+  "message": "No live war resolution artifact has been published yet."
 }
