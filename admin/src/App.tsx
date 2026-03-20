@@ -1,17 +1,18 @@
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { ConnectButton } from "@mysten/dapp-kit-react/ui";
 import WarOverview from "./screens/WarOverview";
-import WarSetupScreen from "./screens/WarSetupScreen";
-import SystemConfigEditor from "./screens/SystemConfigEditor";
-import ScheduleScreen from "./screens/ScheduleScreen";
-import PreviewScreen from "./screens/PreviewScreen";
-import SnapshotScreen from "./screens/SnapshotScreen";
-import DebugScreen from "./screens/DebugScreen";
-import PhaseManager from "./screens/PhaseManager";
 import { useAdminPortalState } from "./lib/admin-context";
 import { ADMIN_ALLOWLIST, ADMIN_UNLOCK_PASSWORD } from "./lib/constants";
+
+const WarSetupScreen = lazy(() => import("./screens/WarSetupScreen"));
+const SystemConfigEditor = lazy(() => import("./screens/SystemConfigEditor"));
+const ScheduleScreen = lazy(() => import("./screens/ScheduleScreen"));
+const PreviewScreen = lazy(() => import("./screens/PreviewScreen"));
+const SnapshotScreen = lazy(() => import("./screens/SnapshotScreen"));
+const DebugScreen = lazy(() => import("./screens/DebugScreen"));
+const PhaseManager = lazy(() => import("./screens/PhaseManager"));
 
 const cardStyle: React.CSSProperties = {
   padding: "1rem",
@@ -223,6 +224,17 @@ function UnauthorizedGate({ address }: { address: string }) {
   );
 }
 
+function AdminRouteFallback() {
+  return (
+    <section style={{ ...cardStyle, display: "grid", gap: "0.5rem" }}>
+      <h2 style={{ margin: 0 }}>Loading admin screen</h2>
+      <p style={{ margin: 0, color: "#a1a1aa" }}>
+        Fetching the next route bundle.
+      </p>
+    </section>
+  );
+}
+
 export default function App() {
   const { isUnlocked } = useAdminPortalState();
   const account = useCurrentAccount();
@@ -252,16 +264,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <Layout>
-        <Routes>
-          <Route path="/" element={<WarOverview />} />
-          <Route path="/setup" element={<WarSetupScreen />} />
-          <Route path="/systems" element={<SystemConfigEditor />} />
-          <Route path="/schedule" element={<ScheduleScreen />} />
-          <Route path="/preview" element={<PreviewScreen />} />
-          <Route path="/snapshots" element={<SnapshotScreen />} />
-          <Route path="/phases" element={<PhaseManager />} />
-          <Route path="/debug" element={<DebugScreen />} />
-        </Routes>
+        <Suspense fallback={<AdminRouteFallback />}>
+          <Routes>
+            <Route path="/" element={<WarOverview />} />
+            <Route path="/setup" element={<WarSetupScreen />} />
+            <Route path="/systems" element={<SystemConfigEditor />} />
+            <Route path="/schedule" element={<ScheduleScreen />} />
+            <Route path="/preview" element={<PreviewScreen />} />
+            <Route path="/snapshots" element={<SnapshotScreen />} />
+            <Route path="/phases" element={<PhaseManager />} />
+            <Route path="/debug" element={<DebugScreen />} />
+          </Routes>
+        </Suspense>
       </Layout>
     </BrowserRouter>
   );

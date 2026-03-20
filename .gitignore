@@ -5,3 +5,12 @@ dist/
 .env.production
 *.tmp
 .verifier-output/
+admin/vite.config.js
+admin/vite.config.d.ts
+runtime/
+verifier/audit/
+verifier/out/
+verifier/.tmp-*.json
+verifier/tmp_*
+verifier/tmp*
+*.tsbuildinfo
