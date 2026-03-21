@@ -22,6 +22,10 @@ import {
 } from "../lib/public-war";
 import { stateLabel } from "../lib/state-colors";
 import { fetchVerifierEnvelope } from "../lib/verifier";
+import {
+  presentResolvedSystemName,
+  useResolvedSystemNames,
+} from "../lib/verifier-presentation";
 
 const panelVariants = {
   hidden: { opacity: 0, y: 8 },
@@ -120,12 +124,9 @@ export default function SystemPage() {
     refetchOnWindowFocus: true,
   });
   const verifierData = verifierEnvelope?.scoreboard;
-  const displayNameBySystemId = useMemo(
-    () =>
-      new Map(
-        (verifierEnvelope?.systemDisplayConfigs ?? []).map((entry) => [entry.systemId, entry.displayName?.trim() ?? ""]),
-      ),
-    [verifierEnvelope?.systemDisplayConfigs],
+  const resolvedSystemNames = useResolvedSystemNames(
+    id ? [id] : [],
+    verifierEnvelope?.systemDisplayConfigs ?? [],
   );
 
   const livePayloadReady = isScoreboardPayloadUsable(verifierData ?? undefined);
@@ -139,7 +140,7 @@ export default function SystemPage() {
     rawSystem && !useMock
       ? {
           ...rawSystem,
-          name: displayNameBySystemId.get(String(rawSystem.id)) || String(rawSystem.id),
+          name: presentResolvedSystemName(rawSystem.id, resolvedSystemNames).primary,
         }
       : rawSystem;
 

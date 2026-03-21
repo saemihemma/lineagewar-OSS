@@ -10,6 +10,13 @@ import {
   fetchAuditIndex,
   fetchVerifierEnvelope,
 } from "../lib/verifier";
+import {
+  presentAuditCategoryLabel,
+  presentAuditSource,
+  presentResolvedSystemName,
+  presentSourceLabel,
+  useResolvedSystemNames,
+} from "../lib/verifier-presentation";
 
 const useVerifier = VERIFIER_SNAPSHOT_URL !== "";
 
@@ -63,24 +70,35 @@ export default function AuditPage() {
       useVerifier && VERIFIER_POLL_INTERVAL_MS > 0 ? VERIFIER_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
   });
-  const systemDisplayNameById = new Map(
-    (envelope?.systemDisplayConfigs ?? []).map((entry) => [entry.systemId, entry.displayName?.trim() ?? ""]),
+  const trackedSystemIds = index?.trackedSystems.map((system) => system.id) ?? [];
+  const resolvedSystemNames = useResolvedSystemNames(
+    trackedSystemIds,
+    envelope?.systemDisplayConfigs ?? [],
   );
   const provenanceRows = envelope?.audit
-    ? [
-        { label: "CANDIDATES", source: envelope.audit.inputs.candidateCollection },
-        { label: "ACTIVE SYSTEMS", source: envelope.audit.inputs.activeSystems },
-        { label: "OWNER RESOLUTION", source: envelope.audit.inputs.ownerResolution },
-        { label: "LOCATION RESOLUTION", source: envelope.audit.inputs.locationResolution },
-      ]
+    ? (
+        Object.entries(envelope.audit.inputs) as Array<
+          [
+            keyof typeof envelope.audit.inputs,
+            (typeof envelope.audit.inputs)[keyof typeof envelope.audit.inputs],
+          ]
+        >
+      ).map(([key, source]) => ({
+          label: presentAuditCategoryLabel(key),
+          presentation: presentAuditSource(source),
+        }))
     : [];
+  const trackedSystems = (index?.trackedSystems ?? []).map((system) => ({
+    ...system,
+    label: presentResolvedSystemName(system.id, resolvedSystemNames),
+  }));
 
   return (
     <TerminalScreen>
       <TerminalHeader
         title={`${envelope?.scoreboard?.warName ?? "Lineage War"} Audit Ledger`}
         meta={[
-          { label: "SOURCE", value: index?.sourceMode ?? "WAITING" },
+          { label: "SOURCE", value: presentSourceLabel(index?.sourceMode) },
           { label: "VERSION", value: index?.verifierVersion ?? "WAITING" },
           {
             label: "LATEST TICK",
@@ -147,12 +165,13 @@ export default function AuditPage() {
               ? statusMessage("Waiting for verifier audit metadata.")
               : (
                 <div style={{ display: "grid", gap: "0.45rem", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
-                  {provenanceRows.map(({ label, source }) => (
+                  {provenanceRows.map(({ label, presentation }) => (
                     <div key={label}>
                       <div style={{ color: "var(--text-dim)", marginBottom: "0.15rem" }}>{label}</div>
-                      <div style={{ color: "var(--text)" }}>{source.mode}</div>
-                      {source.detail ? <div style={{ color: "var(--text-dim)" }}>{source.detail}</div> : null}
-                      {source.path ? <div style={{ color: "var(--yellow-dim)" }}>{source.path}</div> : null}
+                      <div style={{ color: "var(--text)" }}>{presentation.primary}</div>
+                      {presentation.secondary.map((line) => (
+                        <div key={line} style={{ color: "var(--text-dim)" }}>{line}</div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -164,13 +183,16 @@ export default function AuditPage() {
               ? statusMessage("No tracked systems published yet.")
               : (
                 <div style={{ display: "grid", gap: "0.3rem", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
-                  {index.trackedSystems.map((system) => (
+                  {trackedSystems.map((system) => (
                     <Link
                       key={system.id}
                       to={`/system/${system.id}`}
                       style={{ color: "var(--text)", textDecoration: "none" }}
                     >
-                      {system.id} // {systemDisplayNameById.get(system.id) || system.name}
+                      <span>{system.label.primary}</span>
+                      {system.label.secondary ? (
+                        <span style={{ color: "var(--text-dim)" }}> [{system.label.secondary}]</span>
+                      ) : null}
                     </Link>
                   ))}
                 </div>

@@ -19,6 +19,8 @@ export const VERIFIER_POLL_INTERVAL_MS = LIVE_VERIFIER_POLL_INTERVAL_MS;
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 export const WAR_ADMIN_URL = import.meta.env.VITE_WAR_ADMIN_URL ?? "http://127.0.0.1:5173";
+export const WORLD_API_BASE_URL =
+  import.meta.env.VITE_WORLD_API_BASE ?? "https://world-api-stillness.live.tech.evefrontier.com";
 
 export const CONTROL_STATE_NEUTRAL = 0;
 export const CONTROL_STATE_CONTESTED = 1;

@@ -13,11 +13,6 @@ export interface HeaderMetaItem {
   value: string;
 }
 
-export function formatSource(raw: string | undefined): string {
-  if (!raw) return "VERIFIER";
-  return raw.replace(/-/g, " ").toUpperCase();
-}
-
 export function formatUtcTimestamp(
   timestampMs: number | null | undefined,
   options?: Intl.DateTimeFormatOptions,
@@ -161,10 +156,6 @@ export function computeHoldStreaks(snapshots: VerifierSnapshot[]): Map<string, n
 }
 
 /** Build a systemId → name lookup from the systems list. */
-export function buildSystemNameMap(systems: VerifierSystemControl[]): Record<string, string> {
-  return Object.fromEntries(systems.map((s) => [String(s.id), s.name]));
-}
-
 export function isScoreboardPayloadUsable(
   payload: VerifierScoreboardPayload | undefined,
 ): payload is VerifierScoreboardPayload {

@@ -312,22 +312,22 @@ export class OnChainConfigVerifierDataSource implements VerifierDataSource {
   getAuditInputSummary(): AuditInputSummary {
     return {
       candidateCollection: {
-        mode: "seeded_scenario_bootstrap",
+        mode: "seeded_candidate_overlay",
         detail: this.config.scenario,
       },
       activeSystems: {
-        mode: this.config.chain.activeSystemIds.length > 0 ? "declared_active_system_ids" : "scenario_phase_bootstrap",
+        mode: this.config.chain.activeSystemIds.length > 0 ? "declared_active_system_ids" : "seeded_phase_overlay",
         detail:
           this.config.chain.activeSystemIds.length > 0
             ? this.config.chain.activeSystemIds.join(",")
             : this.seededFallback.scenario.phase.displayName,
       },
       ownerResolution: {
-        mode: "scenario_overlay",
+        mode: "seeded_tribe_overlay",
         detail: "tribe ids still come from seeded scenario in chain mode",
       },
       locationResolution: {
-        mode: "scenario_overlay",
+        mode: "seeded_system_overlay",
         detail: "system ids still come from seeded scenario in chain mode",
       },
     };

@@ -6,8 +6,12 @@ import {
   ScoreboardSystem,
   ScoreboardTribeScore,
   SnapshotCommitment,
-  VerifierScenario,
 } from "./types.js";
+
+export interface ScoreboardMetadata {
+  warName: string;
+  tribeNames: Record<string, string>;
+}
 
 const TRIBE_COLORS = [
   "var(--tribe-a)",
@@ -29,17 +33,13 @@ function stateToNumber(state: CanonicalSnapshot["state"]): number {
 }
 
 export function buildScoreboardPayload(
-  scenario: VerifierScenario,
+  metadata: ScoreboardMetadata,
   snapshots: CanonicalSnapshot[],
   commitments: SnapshotCommitment[],
-  tribeNameOverrides: Record<string, string> = {},
   participatingTribeIds: number[] = [],
   chartWindowSize?: number,
 ): ScoreboardPayload {
-  const resolvedTribeNames = {
-    ...scenario.tribeNames,
-    ...tribeNameOverrides,
-  };
+  const resolvedTribeNames = { ...metadata.tribeNames };
   const tribeIds = [...new Set([
     ...participatingTribeIds,
     ...snapshots.flatMap((snapshot) => snapshot.presenceRows.map((row) => row.tribeId)),
@@ -121,7 +121,7 @@ export function buildScoreboardPayload(
       .sort((a, b) => a.systemId - b.systemId)[0] ?? null;
 
   return {
-    warName: scenario.warName,
+    warName: metadata.warName,
     lastTickMs: chartData[chartData.length - 1]?.timestamp ?? null,
     tickRateMinutes: tickRateMinutes && tickRateMinutes > 0 ? tickRateMinutes : undefined,
     tickStatus: latestSnapshot?.resolutionMetadata.tickStatus,

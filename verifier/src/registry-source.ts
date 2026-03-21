@@ -634,11 +634,8 @@ export class RegistryBackedVerifierDataSource extends OnChainConfigVerifierDataS
         objectCount: this.registryEntries.length,
       },
       activeSystems: {
-        mode: this.config.chain.activeSystemIds.length > 0 ? "declared_active_system_ids" : "scenario_phase_bootstrap",
-        detail:
-          this.config.chain.activeSystemIds.length > 0
-            ? this.config.chain.activeSystemIds.join(",")
-            : this.seededFallback.scenario.phase.displayName,
+        mode: "phase_config_live",
+        detail: "Resolved from the active published phase at tick time.",
       },
       ownerResolution: {
         mode: graphqlEnabled ? "graphql_ownercap_chain" : "owner_tribe_registry_manifest",
@@ -649,8 +646,8 @@ export class RegistryBackedVerifierDataSource extends OnChainConfigVerifierDataS
         mode: this.config.chain.assemblySystemMappingPath
           ? "assembly_system_mapping_manifest"
           : this.config.chain.locationMappingPath
-            ? "location_hash_bootstrap_manifest"
-            : "live_system_field_or_bootstrap_manifest",
+            ? "location_hash_mapping_manifest"
+            : "live_system_field_runtime_mapping",
         path: this.config.chain.assemblySystemMappingPath ?? this.config.chain.locationMappingPath,
         objectCount:
           this.systemIdByAssemblyId.size > 0

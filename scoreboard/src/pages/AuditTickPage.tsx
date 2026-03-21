@@ -5,7 +5,7 @@ import TerminalScreen from "../components/terminal/TerminalScreen";
 import TerminalHeader from "../components/terminal/TerminalHeader";
 import TerminalPanel from "../components/terminal/TerminalPanel";
 import { VERIFIER_SNAPSHOT_URL } from "../lib/constants";
-import { formatUtcTimestamp } from "../lib/public-war";
+import { fallbackTribeName, formatUtcTimestamp } from "../lib/public-war";
 import {
   buildAuditArtifactUrl,
   buildAuditIndexUrl,
@@ -13,7 +13,13 @@ import {
   fetchTickAuditArtifact,
   fetchTickReceipt,
 } from "../lib/verifier";
-import { fallbackTribeName } from "../lib/public-war";
+import {
+  presentAuditCategoryLabel,
+  presentAuditSource,
+  presentResolvedSystemName,
+  presentSourceLabel,
+  useResolvedSystemNames,
+} from "../lib/verifier-presentation";
 
 const useVerifier = VERIFIER_SNAPSHOT_URL !== "";
 
@@ -29,7 +35,7 @@ function backLink() {
         textDecoration: "none",
       }}
     >
-      ← AUDIT LEDGER
+      {"<- AUDIT LEDGER"}
     </Link>
   );
 }
@@ -38,7 +44,9 @@ function renderMessage(title: string, message: string) {
   return (
     <TerminalScreen>
       <TerminalHeader title={title} status="STANDBY" right={backLink()} />
-      <div style={{ padding: "3rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono" }}>{message}</div>
+      <div style={{ padding: "3rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono" }}>
+        {message}
+      </div>
     </TerminalScreen>
   );
 }
@@ -79,6 +87,21 @@ export default function AuditTickPage() {
     retry: false,
   });
 
+  const resolvedSystemNames = useResolvedSystemNames(
+    artifact?.systems.map((system) => system.systemId) ?? [],
+    artifact?.systems.flatMap((system) => (system.editorialDisplay ? [system.editorialDisplay] : [])) ?? [],
+  );
+  const provenanceRows = artifact
+    ? (
+        Object.entries(artifact.inputs) as Array<
+          [keyof typeof artifact.inputs, (typeof artifact.inputs)[keyof typeof artifact.inputs]]
+        >
+      ).map(([key, source]) => ({
+        label: presentAuditCategoryLabel(key),
+        presentation: presentAuditSource(source),
+      }))
+    : [];
+
   if (!useVerifier) {
     return renderMessage("AUDIT TICK", "Tick audit pages are unavailable while the score app is in mock mode.");
   }
@@ -100,7 +123,7 @@ export default function AuditTickPage() {
       <TerminalHeader
         title={`Tick ${formatUtcTimestamp(artifact.tickTimestampMs)}`}
         meta={[
-          { label: "SOURCE", value: artifact.sourceMode },
+          { label: "SOURCE", value: presentSourceLabel(artifact.sourceMode) },
           { label: "SYSTEMS", value: String(artifact.systems.length) },
           { label: "VERSION", value: artifact.verifierVersion },
         ]}
@@ -121,7 +144,7 @@ export default function AuditTickPage() {
           <TerminalPanel title="SYSTEM SNAPSHOTS" accent="default">
             <div style={{ display: "grid", gap: "0.45rem", fontFamily: "IBM Plex Mono", fontSize: "0.67rem" }}>
               {artifact.systems.map((system) => {
-                const displayName = system.editorialDisplay?.displayName?.trim() || String(system.systemId);
+                const label = presentResolvedSystemName(system.systemId, resolvedSystemNames);
                 const receiptResult = receipt?.results.find(
                   (entry) =>
                     entry.systemId === system.systemId &&
@@ -134,7 +157,10 @@ export default function AuditTickPage() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
                       <Link to={`/system/${system.systemId}`} style={{ color: "var(--mint)", textDecoration: "none" }}>
-                        SYSTEM {system.systemId} // {displayName}
+                        {label.primary}
+                        {label.secondary ? (
+                          <span style={{ color: "var(--text-dim)" }}> [{label.secondary}]</span>
+                        ) : null}
                       </Link>
                       <span style={{ color: "var(--text-dim)" }}>{system.snapshot.state}</span>
                     </div>
@@ -165,7 +191,7 @@ export default function AuditTickPage() {
                     </div>
                     <div style={{ marginTop: "0.35rem", color: "var(--text-dim)" }}>Editorial display copy</div>
                     <div style={{ color: "var(--text)" }}>
-                      Display name: {displayName}
+                      Display name: {label.primary}
                     </div>
                     <div style={{ color: "var(--text)" }}>
                       Rule text: {system.editorialDisplay?.publicRuleText || "—"}
@@ -202,15 +228,15 @@ export default function AuditTickPage() {
 
           <TerminalPanel title="INPUT PROVENANCE" accent="default">
             <div style={{ display: "grid", gap: "0.45rem", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
-              {[
-                ["CANDIDATES", artifact.inputs.candidateCollection.mode],
-                ["ACTIVE SYSTEMS", artifact.inputs.activeSystems.mode],
-                ["OWNER RESOLUTION", artifact.inputs.ownerResolution.mode],
-                ["LOCATION RESOLUTION", artifact.inputs.locationResolution.mode],
-              ].map(([label, value]) => (
+              {provenanceRows.map(({ label, presentation }) => (
                 <div key={label}>
                   <div style={{ color: "var(--text-dim)" }}>{label}</div>
-                  <div style={{ color: "var(--text)" }}>{value}</div>
+                  <div style={{ color: "var(--text)" }}>{presentation.primary}</div>
+                  {presentation.secondary.map((line) => (
+                    <div key={line} style={{ color: "var(--text-dim)" }}>
+                      {line}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>

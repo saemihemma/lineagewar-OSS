@@ -681,6 +681,16 @@ async function runTick(
     ownerResolution: { mode: "unknown" },
     locationResolution: { mode: "unknown" },
   };
+  if (currentPhase) {
+    auditInputs.activeSystems = {
+      mode: "phase_config_live",
+      detail:
+        currentPhase.activeSystemIds.length > 0
+          ? `${currentPhase.displayName} // ${currentPhase.activeSystemIds.join(", ")}`
+          : `${currentPhase.displayName} // no active systems`,
+      objectCount: currentPhase.activeSystemIds.length,
+    };
+  }
 
   const tickPlan = await buildTickPlan(dataSource, tickStartMs, historicalTickCount, warEndMs);
   const currentBoundaryEntries = tickPlan.filter((entry) => entry.tickTimestampMs === currentTickBoundary);
@@ -847,11 +857,14 @@ async function runTick(
     ...discovered.tribeNames,
     ...dataSource.getTribeNameMap(),
   };
+  const scoreboardMetadata = {
+    warName: discovered.warDisplayName || `War ${discovered.warId}`,
+    tribeNames: tribeNameOverrides,
+  };
   const payload = buildScoreboardPayload(
-    dataSource.scenario,
+    scoreboardMetadata,
     resolved.map((e) => e.snapshot),
     resolved.map((e) => e.commitment),
-    tribeNameOverrides,
     discovered.participatingTribeIds,
   );
 

@@ -27,12 +27,15 @@ import {
 } from "../lib/constants";
 import {
   buildHeaderMeta,
-  buildSystemNameMap,
   buildTribeColorById,
-  formatSource,
   isScoreboardPayloadUsable,
 } from "../lib/public-war";
 import { fetchVerifierEnvelope } from "../lib/verifier";
+import {
+  buildSystemNameRecord,
+  presentSourceLabel,
+  useResolvedSystemNames,
+} from "../lib/verifier-presentation";
 import type { VerifierChartPoint, VerifierChartSeries, VerifierSystemControl } from "../lib/verifier";
 
 const MOCK_CHART_SERIES: VerifierChartSeries[] = [
@@ -90,16 +93,16 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
     : livePayloadReady
       ? verifierData.systems
       : [];
+  const resolvedSystemNames = useResolvedSystemNames(
+    rawSystems.map((system) => system.id),
+    systemDisplayConfigs,
+  );
   const displayedSystems = useMemo(() => {
-    const displayNameBySystemId = new Map(
-      systemDisplayConfigs.map((entry) => [entry.systemId, entry.displayName?.trim() ?? ""]),
-    );
-
     return rawSystems.map((system) => ({
       ...system,
-      name: displayNameBySystemId.get(String(system.id)) || String(system.id),
+      name: resolvedSystemNames.get(String(system.id)) || String(system.id),
     }));
-  }, [rawSystems, systemDisplayConfigs]);
+  }, [rawSystems, resolvedSystemNames]);
   const snapshots = livePayloadReady ? (verifierData.snapshots ?? []) : [];
 
   const chartData = useMemo(
@@ -119,7 +122,7 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
 
   const lastTickMs = useMock ? MOCK_LAST_TICK_MS : verifierData?.lastTickMs ?? Date.now();
   const tribeColorById = useMemo(() => buildTribeColorById(tribeScores), [tribeScores]);
-  const systemNames = useMemo(() => buildSystemNameMap(displayedSystems), [displayedSystems]);
+  const systemNames = useMemo(() => buildSystemNameRecord(resolvedSystemNames), [resolvedSystemNames]);
   const tickCount =
     typeof envelopeConfig?.tickCount === "number" ? envelopeConfig.tickCount : undefined;
   const sourceMode =
@@ -150,7 +153,7 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
               value: `${displayedSystems.filter((s) => s.state !== 0).length} ACTIVE`,
             },
           ]
-        : buildHeaderMeta(displayedSystems, chartData, formatSource(sourceMode)),
+        : buildHeaderMeta(displayedSystems, chartData, presentSourceLabel(sourceMode)),
     [chartData, displayedSystems, sourceMode],
   );
 
