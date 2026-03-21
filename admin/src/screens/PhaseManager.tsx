@@ -12,6 +12,7 @@ import {
 import { useAdminPortalState } from "../lib/admin-context";
 import { formatTimestamp, parseDateTimeLocalToMs, toDateTimeLocalValue, useAutoRegistryId, useOwnedAdminCaps, usePublishedPhaseTimeline, useCurrentWarTickRate, shortenId } from "../lib/utils";
 import type { AssemblyFamily, BatchPhaseConfigDraft, StorageRequirementMode } from "../lib/types";
+import { buildEditorialDisplayPayload, fetchEditorialDisplayEntries, publishEditorialDisplay } from "../lib/verifier-sync";
 
 const cardStyle: React.CSSProperties = {
   padding: "1rem",
@@ -103,6 +104,10 @@ function defaultSystemRule(systemId: number): PhaseSystemRule {
     publicRuleText: "",
     sunset: false,
   };
+}
+
+function phaseDisplayKey(phaseId: number | null, systemId: number | string): string {
+  return `${phaseId ?? "none"}:${String(systemId)}`;
 }
 
 const TIME_PRESETS: Array<{ label: string; offsetMs: number | null }> = [
@@ -462,6 +467,12 @@ export default function PhaseManager() {
   const selectedAdminCap = ownedAdminCaps.data?.find((cap) => cap.objectId === selectedAdminCapId) ?? null;
   const activeWarId = selectedAdminCap?.warId ?? null;
   const chainTimeline = usePublishedPhaseTimeline(activeWarId);
+  const publishedEditorialEntriesQuery = useQuery({
+    queryKey: ["editorialDisplayEntries", activeWarId],
+    enabled: activeWarId != null && activeWarId > 0,
+    staleTime: 30_000,
+    queryFn: () => fetchEditorialDisplayEntries(activeWarId!),
+  });
   const account = useCurrentAccount();
 
   const client = useCurrentClient();
@@ -499,6 +510,9 @@ export default function PhaseManager() {
 
   const [expandedPhase, setExpandedPhase] = useState<number | null>(null);
   const [draftPhase, setDraftPhase] = useState<PhaseEntry | null>(null);
+  const [phaseDisplayDrafts, setPhaseDisplayDrafts] = useState<Record<string, string>>({});
+  const [publishingPhaseNumber, setPublishingPhaseNumber] = useState<number | null>(null);
+  const [publishMessage, setPublishMessage] = useState<string | null>(null);
   const [timePreset, setTimePreset] = useState<number | null>(0);
   const [customDateTime, setCustomDateTime] = useState(toDateTimeLocalValue(Date.now() + 60 * 60_000));
   const [newSystemId, setNewSystemId] = useState("");
@@ -507,6 +521,17 @@ export default function PhaseManager() {
   const [defaultTickMinutes, setDefaultTickMinutes] = useState(60);
   const [tickRateConfirmed, setTickRateConfirmed] = useState(false);
   const tickRateChanged = defaultTickMinutes !== onChainTickRate;
+  const publishedPhaseDisplayByKey = useMemo(() => {
+    const map = new Map<string, { displayName: string; publicRuleText: string }>();
+    for (const entry of publishedEditorialEntriesQuery.data ?? []) {
+      const phaseId = Number.isFinite(entry.phaseId ?? NaN) ? entry.phaseId : null;
+      map.set(phaseDisplayKey(phaseId, entry.systemId), {
+        displayName: entry.displayName?.trim() ?? "",
+        publicRuleText: entry.publicRuleText ?? "",
+      });
+    }
+    return map;
+  }, [publishedEditorialEntriesQuery.data]);
 
   useEffect(() => {
     if (!selectedAdminCapId && ownedAdminCaps.data?.length) {
@@ -567,7 +592,7 @@ export default function PhaseManager() {
           neutralMinTotalPresence: cfg.neutralMinTotalPresence,
           contestedWhenTied: cfg.contestedWhenTied,
           assemblyRules: rules,
-          publicRuleText: "",
+          publicRuleText: publishedPhaseDisplayByKey.get(phaseDisplayKey(onChainPhase.version, cfg.systemId))?.publicRuleText ?? "",
           sunset: !cfg.enabled,
         };
       }),
@@ -583,7 +608,7 @@ export default function PhaseManager() {
       }
     }
     return entries;
-  }, [chainTimeline.data]);
+  }, [chainTimeline.data, publishedPhaseDisplayByKey]);
 
   const knownChainSystemIds = useMemo(
     () => new Set(chainPhases.flatMap((phase) => phase.systems.map((system) => system.systemId))),
@@ -764,6 +789,50 @@ export default function PhaseManager() {
     }) + " UTC";
   };
 
+  const readPublishedPhaseDisplay = (phaseNumber: number, systemId: number) =>
+    publishedPhaseDisplayByKey.get(phaseDisplayKey(phaseNumber, systemId)) ?? null;
+
+  const readPhaseDisplayDraft = (phaseNumber: number, systemId: number, fallback = "") =>
+    phaseDisplayDrafts[phaseDisplayKey(phaseNumber, systemId)] ??
+    readPublishedPhaseDisplay(phaseNumber, systemId)?.publicRuleText ??
+    fallback;
+
+  const updatePhaseDisplayDraft = (phaseNumber: number, systemId: number, value: string) => {
+    setPhaseDisplayDrafts((current) => ({
+      ...current,
+      [phaseDisplayKey(phaseNumber, systemId)]: value.slice(0, 280),
+    }));
+  };
+
+  const publishPhaseDisplayCopy = async (phase: PhaseEntry) => {
+    if (!activeWarId || !phase.activationMs) return;
+
+    try {
+      setPublishingPhaseNumber(phase.phaseNumber);
+      setPublishMessage(null);
+      await publishEditorialDisplay(buildEditorialDisplayPayload({
+        warId: activeWarId,
+        phaseId: phase.phaseNumber,
+        effectiveFromMs: phase.activationMs,
+        reason: "manual-phase-display-publish",
+        systems: phase.systems.map((system) => ({
+          systemId: system.systemId,
+          displayName:
+            systemNameMap.get(system.systemId) ??
+            readPublishedPhaseDisplay(phase.phaseNumber, system.systemId)?.displayName ??
+            String(system.systemId),
+          publicRuleText: readPhaseDisplayDraft(phase.phaseNumber, system.systemId, system.publicRuleText).trim(),
+        })),
+      }));
+      await publishedEditorialEntriesQuery.refetch();
+      setPublishMessage(`Published display copy for ${phase.label}.`);
+    } catch (error) {
+      setPublishMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setPublishingPhaseNumber(null);
+    }
+  };
+
   return (
     <div style={{ display: "grid", gap: "1.5rem", maxWidth: 900 }}>
       <div>
@@ -833,6 +902,21 @@ export default function PhaseManager() {
             </button>
           </div>
         </div>
+        {publishMessage && (
+          <div
+            style={{
+              marginBottom: "0.75rem",
+              padding: "0.65rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #27272a",
+              background: publishMessage.startsWith("Published") ? "#0f2918" : "#1c0f0f",
+              color: publishMessage.startsWith("Published") ? "#86efac" : "#fca5a5",
+              fontSize: "0.8rem",
+            }}
+          >
+            {publishMessage}
+          </div>
+        )}
         <div style={{ display: "grid", gap: "0.5rem" }}>
           {phases.map((phase, idx) => {
             const isChainBacked = idx > 0;
@@ -911,16 +995,62 @@ export default function PhaseManager() {
                             <span style={{ color: "#22c55e", fontSize: "0.8rem" }}>{sys.pointsPerTick} pts/tick</span>
                           </div>
                           {!sys.sunset && (
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.35rem", fontSize: "0.75rem" }}>
-                              <div><span style={{ color: "#71717a" }}>Take margin: </span><span style={{ color: "#d4d4d8" }}>{sys.takeMargin}</span></div>
-                              <div><span style={{ color: "#71717a" }}>Hold margin: </span><span style={{ color: "#d4d4d8" }}>{sys.holdMargin}</span></div>
-                              <div><span style={{ color: "#71717a" }}>Neutral min: </span><span style={{ color: "#d4d4d8" }}>{sys.neutralMinTotalPresence}</span></div>
-                              <div><span style={{ color: "#71717a" }}>Contested when tied: </span><span style={{ color: "#d4d4d8" }}>{sys.contestedWhenTied ? "Yes" : "No"}</span></div>
-                            </div>
+                            <>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.35rem", fontSize: "0.75rem" }}>
+                                <div><span style={{ color: "#71717a" }}>Take margin: </span><span style={{ color: "#d4d4d8" }}>{sys.takeMargin}</span></div>
+                                <div><span style={{ color: "#71717a" }}>Hold margin: </span><span style={{ color: "#d4d4d8" }}>{sys.holdMargin}</span></div>
+                                <div><span style={{ color: "#71717a" }}>Neutral min: </span><span style={{ color: "#d4d4d8" }}>{sys.neutralMinTotalPresence}</span></div>
+                                <div><span style={{ color: "#71717a" }}>Contested when tied: </span><span style={{ color: "#d4d4d8" }}>{sys.contestedWhenTied ? "Yes" : "No"}</span></div>
+                              </div>
+                              {isChainBacked && (
+                                <label style={{ ...labelStyle, marginTop: "0.5rem" }}>
+                                  <span style={{ fontSize: "0.75rem", color: "#71717a" }}>Public rule text</span>
+                                  <input
+                                    style={{ ...inputStyle, fontSize: "0.8rem" }}
+                                    value={readPhaseDisplayDraft(phase.phaseNumber, sys.systemId, sys.publicRuleText)}
+                                    onChange={(event) =>
+                                      updatePhaseDisplayDraft(phase.phaseNumber, sys.systemId, event.target.value)
+                                    }
+                                    placeholder="Describe the live rule shown to players"
+                                  />
+                                </label>
+                              )}
+                            </>
                           )}
                         </div>
                       ))}
                     </div>
+                    {isChainBacked && phase.activationMs && activeWarId && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          marginTop: "0.75rem",
+                          paddingTop: "0.75rem",
+                          borderTop: "1px solid #27272a",
+                        }}
+                      >
+                        <span style={{ color: "#71717a", fontSize: "0.75rem" }}>
+                          Publish public display copy for this phase without changing on-chain config.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void publishPhaseDisplayCopy(phase)}
+                          disabled={publishingPhaseNumber === phase.phaseNumber}
+                          style={{
+                            ...smallBtnStyle,
+                            borderColor: "#166534",
+                            color: "#86efac",
+                            opacity: publishingPhaseNumber === phase.phaseNumber ? 0.6 : 1,
+                            cursor: publishingPhaseNumber === phase.phaseNumber ? "wait" : "pointer",
+                          }}
+                        >
+                          {publishingPhaseNumber === phase.phaseNumber ? "Publishing..." : "Publish display copy"}
+                        </button>
+                      </div>
+                    )}
                     {!isChainBacked && (
                       <p style={{ color: "#52525b", fontSize: "0.7rem", margin: "0.5rem 0 0" }}>
                         Genesis phase (local config, not published on-chain)

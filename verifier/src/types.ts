@@ -244,7 +244,10 @@ export interface VerifierConfig {
   tickStartMs: number;
   tickCount: number;
   phaseStatusWithheld: boolean;
+  phaseId: number | null;
+  phaseStartMs: number | null;
   phaseEndMs: number | null;
+  nextPhaseStartMs: number | null;
   phaseLabel: string | null;
   warEndMs: number | null;
   outputJson: boolean;
@@ -442,6 +445,18 @@ export interface VerifierScenario {
 
 export interface SystemDisplayConfig {
   systemId: string;
+  // Editorial/public-display only. This must never be treated as scoring authority.
+  displayName?: string;
+  // Editorial/public-display only. This must never be treated as scoring authority.
+  publicRuleText: string;
+}
+
+export interface EditorialDisplayEntry {
+  warId: number;
+  phaseId: number | null;
+  systemId: string;
+  effectiveFromMs: number;
+  updatedAtMs: number;
   // Editorial/public-display only. This must never be treated as scoring authority.
   displayName?: string;
   // Editorial/public-display only. This must never be treated as scoring authority.

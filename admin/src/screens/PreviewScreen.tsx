@@ -4,17 +4,11 @@ import { useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
 import { useAdminPortalState } from "../lib/admin-context";
 import { buildDraftPreview, buildTransactionForDraft, extractExecutionRecord } from "../lib/transactions";
 import { formatTimestamp, shortenId } from "../lib/utils";
-
-function getVerifierUrl(): string {
-  const configured = import.meta.env.VITE_VERIFIER_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/$/, "");
-  }
-  if (typeof window !== "undefined") {
-    return window.location.origin.replace(/\/$/, "");
-  }
-  return "";
-}
+import {
+  buildEditorialDisplayPayloadForDraft,
+  notifyVerifier,
+  publishEditorialDisplay,
+} from "../lib/verifier-sync";
 
 function extractNotifyWarId(draft: NonNullable<ReturnType<typeof useAdminPortalState>["draft"]>): number | undefined {
   switch (draft.kind) {
@@ -35,16 +29,6 @@ function extractNotifyWarId(draft: NonNullable<ReturnType<typeof useAdminPortalS
       return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
     }
   }
-}
-
-function notifyVerifier(payload: { warId?: number; txDigest?: string; reason?: string }): void {
-  const verifierUrl = getVerifierUrl();
-  if (!verifierUrl) return;
-  fetch(`${verifierUrl}/notify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  }).catch(() => {});
 }
 
 function extractCreatedWarAdminCapId(createdByType: Record<string, string[]>): string | null {
@@ -114,11 +98,26 @@ export default function PreviewScreen() {
         }
       }
 
-      notifyVerifier({
-        warId: extractNotifyWarId(draft),
-        txDigest: execution.digest,
-        reason: draft.kind,
-      });
+      let refreshTriggeredByEditorialPublish = false;
+      const editorialPayload = buildEditorialDisplayPayloadForDraft(draft);
+      if (editorialPayload) {
+        try {
+          await publishEditorialDisplay(editorialPayload);
+          refreshTriggeredByEditorialPublish = true;
+        } catch (error) {
+          setErrorMessage(
+            `Transaction succeeded, but publishing public display copy failed. ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+
+      if (!refreshTriggeredByEditorialPublish) {
+        notifyVerifier({
+          warId: extractNotifyWarId(draft),
+          txDigest: execution.digest,
+          reason: draft.kind,
+        });
+      }
       setDraft(null);
     } catch (error) {
       setSubmitState("idle");

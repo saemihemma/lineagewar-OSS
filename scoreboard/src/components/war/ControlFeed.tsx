@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import LogList, { type LogEntry } from "../telemetry/LogList";
 import type { VerifierSnapshot, VerifierTribeScore } from "../../lib/verifier";
 
@@ -95,7 +96,7 @@ function buildFeedEvents(
 }
 
 const FEED_COL = "4ch 5ch minmax(0, 11ch) auto";
-const feedCell: React.CSSProperties = { padding: "0.25rem 0" };
+const feedCell: CSSProperties = { padding: "0.25rem 0" };
 
 function FeedRow({ event }: { event: FeedEvent }) {
   const newToken = stateToken(event.newState, event.tribe);
@@ -163,7 +164,7 @@ export default function ControlFeed({
   // Mock fallback
   if (!snapshots || snapshots.length === 0) {
     if (mockEntries && mockEntries.length > 0) {
-      return <LogList entries={mockEntries} maxHeight={320} />;
+      return <LogList entries={mockEntries} />;
     }
     return (
       <div
@@ -213,7 +214,8 @@ export default function ControlFeed({
   return (
     <div
       style={{
-        maxHeight: 320,
+        height: "100%",
+        minHeight: 0,
         overflowY: "auto",
         display: "grid",
         gridTemplateColumns: FEED_COL,
@@ -243,7 +245,7 @@ export default function ControlFeed({
               TICK {group.tickIndex}
             </span>
             <span style={{ whiteSpace: "nowrap" }}>
-              · {formatTime(group.tickMs)} UTC · {group.events.length} SYSTEM{group.events.length !== 1 ? "S" : ""} LOGGED
+              · {formatTime(group.tickMs)} UTC · {group.events.length} SYSTEM{group.events.length !== 1 ? "S" : ""} RESOLVED
             </span>
           </div>
           {group.events.map((event) => (

@@ -158,12 +158,30 @@ export interface VerifierAuditSummary {
   inputs: VerifierAuditInputSummary;
 }
 
+export interface VerifierEnvelopeConfig {
+  source?: string;
+  warId?: number;
+  tickStartMs?: number;
+  tickCount?: number;
+  phaseStatusWithheld?: boolean;
+  phaseId?: number | null;
+  phaseStartMs?: number | null;
+  phaseEndMs?: number | null;
+  nextPhaseStartMs?: number | null;
+  phaseLabel?: string | null;
+  warEndMs?: number | null;
+  tickRateMinutes?: number;
+  tickStatus?: "live_resolved" | "degraded_frozen" | null;
+  degradedReason?: string | null;
+  carriedForwardFromTickMs?: number | null;
+}
+
 export interface VerifierScoreboardEnvelope {
   scoreboard: VerifierScoreboardPayload | null;
   tickStatus?: "live_resolved" | "degraded_frozen";
   degradedReason?: string | null;
   carriedForwardFromTickMs?: number | null;
-  config?: Record<string, unknown>;
+  config?: VerifierEnvelopeConfig;
   tickPlan?: VerifierTickPlanEntry[];
   commitments?: VerifierSnapshotCommitment[];
   snapshots?: VerifierSnapshot[];

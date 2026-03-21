@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -22,12 +22,12 @@ import {
 import {
   LIVE_VERIFIER_POLL_INTERVAL_MS,
   LIVE_VERIFIER_SNAPSHOT_URL,
+  PREDICTION_MARKET_URL,
   SIMULATION_VERIFIER_POLL_INTERVAL_MS,
   SIMULATION_VERIFIER_SNAPSHOT_URL,
 } from "../lib/constants";
 import {
   buildHeaderMeta,
-  buildTribeColorById,
   isScoreboardPayloadUsable,
 } from "../lib/public-war";
 import { fetchVerifierEnvelope } from "../lib/verifier";
@@ -52,10 +52,38 @@ const panelVariants = {
   }),
 };
 
+const actionLinkStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0.45rem 0.7rem",
+  border: "1px solid var(--border-panel)",
+  textDecoration: "none",
+  fontFamily: "IBM Plex Mono",
+  fontSize: "0.62rem",
+  letterSpacing: "0.12em",
+  whiteSpace: "nowrap",
+  minHeight: 30,
+};
+
 export type WarDataMode = "live" | "simulation";
 
 interface WarPageProps {
   mode?: WarDataMode;
+}
+
+function asFiniteNumber(value: number | null | undefined): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function buildPhaseLabel(phaseId?: number | null, phaseLabel?: string | null): string | null {
+  if (typeof phaseLabel === "string" && phaseLabel.trim().length > 0) {
+    return phaseLabel.trim();
+  }
+  if (typeof phaseId === "number" && Number.isFinite(phaseId)) {
+    return `Phase ${phaseId}`;
+  }
+  return null;
 }
 
 export default function WarPage({ mode = "live" }: WarPageProps) {
@@ -112,35 +140,45 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
         : livePayloadReady
           ? verifierData.chartData
           : [],
-    [livePayloadReady, verifierData],
+    [livePayloadReady, verifierData, useMock],
   );
   const chartSeries = useMemo(
     () =>
       useMock ? MOCK_CHART_SERIES : livePayloadReady ? verifierData.chartSeries.slice(0, 2) : [],
-    [livePayloadReady, verifierData],
+    [livePayloadReady, verifierData, useMock],
   );
 
-  const lastTickMs = useMock ? MOCK_LAST_TICK_MS : verifierData?.lastTickMs ?? Date.now();
-  const tribeColorById = useMemo(() => buildTribeColorById(tribeScores), [tribeScores]);
+  const lastTickMs = useMock ? MOCK_LAST_TICK_MS : verifierData?.lastTickMs ?? null;
   const systemNames = useMemo(() => buildSystemNameRecord(resolvedSystemNames), [resolvedSystemNames]);
-  const tickCount =
-    typeof envelopeConfig?.tickCount === "number" ? envelopeConfig.tickCount : undefined;
-  const sourceMode =
-    typeof envelopeConfig?.source === "string" ? envelopeConfig.source : undefined;
+  const sourceMode = envelopeConfig?.source;
+  const resolvedTickCount = useMemo(() => chartData.length, [chartData]);
+
+  const phaseLabel = useMock
+    ? undefined
+    : buildPhaseLabel(envelopeConfig?.phaseId, envelopeConfig?.phaseLabel);
+  const phaseStartMs = useMock ? MOCK_PHASE.startMs : asFiniteNumber(envelopeConfig?.phaseStartMs);
+  const phaseEndMs = useMock ? MOCK_PHASE.endMs : asFiniteNumber(envelopeConfig?.phaseEndMs);
+  const nextPhaseStartMs = useMock ? undefined : asFiniteNumber(envelopeConfig?.nextPhaseStartMs);
 
   const tickRateMinutes = useMemo(() => {
-    if (!useMock && verifierData?.tickRateMinutes && verifierData.tickRateMinutes > 0) {
-      return verifierData.tickRateMinutes;
+    if (!useMock) {
+      const configured = asFiniteNumber(envelopeConfig?.tickRateMinutes);
+      if (configured && configured > 0) {
+        return configured;
+      }
+      if (verifierData?.tickRateMinutes && verifierData.tickRateMinutes > 0) {
+        return verifierData.tickRateMinutes;
+      }
     }
     if (chartData.length >= 2) {
       const last = chartData[chartData.length - 1];
       const prev = chartData[chartData.length - 2];
-      const diffMs = (last.timestamp as number) - (prev.timestamp as number);
+      const diffMs = Number(last.timestamp) - Number(prev.timestamp);
       const mins = diffMs / 60000;
       return mins > 0 ? mins : undefined;
     }
     return undefined;
-  }, [chartData]);
+  }, [chartData, envelopeConfig?.tickRateMinutes, useMock, verifierData?.tickRateMinutes]);
 
   const headerMeta = useMemo(
     () =>
@@ -150,233 +188,273 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
             { label: "TICK", value: String(MOCK_PHASE.tick) },
             {
               label: "SYSTEMS",
-              value: `${displayedSystems.filter((s) => s.state !== 0).length} ACTIVE`,
+              value: `${displayedSystems.length} TRACKED`,
             },
           ]
         : buildHeaderMeta(displayedSystems, chartData, presentSourceLabel(sourceMode)),
-    [chartData, displayedSystems, sourceMode],
+    [chartData, displayedSystems, sourceMode, useMock],
   );
 
-  // tribeColorById kept for potential future system map use
-  void tribeColorById;
+  const headerRight = useVerifier ? (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
+      {PREDICTION_MARKET_URL ? (
+        <a
+          href={PREDICTION_MARKET_URL}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            ...actionLinkStyle,
+            color: "var(--mint)",
+            borderColor: "rgba(160, 230, 220, 0.45)",
+            boxShadow: "inset 0 0 0 1px rgba(160, 230, 220, 0.12)",
+          }}
+        >
+          PREDICTION MARKET
+        </a>
+      ) : (
+        <span
+          style={{
+            ...actionLinkStyle,
+            color: "var(--mint)",
+            borderColor: "rgba(160, 230, 220, 0.45)",
+            boxShadow: "inset 0 0 0 1px rgba(160, 230, 220, 0.12)",
+          }}
+        >
+          PREDICTION MARKET
+        </span>
+      )}
+      <Link
+        to="/audit"
+        style={{
+          ...actionLinkStyle,
+          color: "var(--text-dim)",
+        }}
+      >
+        VIEW AUDIT →
+      </Link>
+    </div>
+  ) : undefined;
 
   return (
     <TerminalScreen>
-      <div style={{ position: "relative", minHeight: "100dvh" }}>
-      <TerminalHeader
-        title={warName}
-        meta={headerMeta}
-        status={
-          useMock
-            ? "ACTIVE"
-            : tickStatus === "degraded_frozen"
-              ? "DEGRADED"
-              : livePayloadReady && !error
-                ? "ACTIVE"
-                : "STANDBY"
-        }
-        right={
-          useVerifier ? (
-            <Link
-              to="/audit"
-              style={{
-                fontFamily: "IBM Plex Mono",
-                fontSize: "0.65rem",
-                letterSpacing: "0.1em",
-                color: "var(--text-dim)",
-                textDecoration: "none",
-              }}
-            >
-              VIEW AUDIT →
-            </Link>
-          ) : undefined
-        }
-      />
-
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1px",
-          background: "var(--border-panel)",
+          position: "relative",
+          height: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
-        {tickStatus === "degraded_frozen" && (
+        <TerminalHeader
+          title={warName}
+          meta={headerMeta}
+          status={
+            useMock
+              ? "ACTIVE"
+              : tickStatus === "degraded_frozen"
+                ? "DEGRADED"
+                : livePayloadReady && !error
+                  ? "ACTIVE"
+                  : "STANDBY"
+          }
+          statusPosition="left"
+          right={headerRight}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            minHeight: 0,
+            overflow: "hidden",
+          }}
+        >
           <div
             style={{
-              gridColumn: "1 / -1",
-              padding: "0.55rem 1rem",
-              fontFamily: "IBM Plex Mono",
-              fontSize: "0.68rem",
-              letterSpacing: "0.04em",
-              color: "var(--yellow-dim)",
-              background: "rgba(242,201,76,0.08)",
-              borderBottom: "1px solid var(--border-panel)",
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "42%",
+              backgroundImage: "url(/corridorofsaddness.jpg)",
+              backgroundSize: "cover",
+              backgroundPosition: "center top",
+              filter: "grayscale(1) blur(2px)",
+              opacity: 0.06,
+              pointerEvents: "none",
+              zIndex: 0,
+              maskImage: "linear-gradient(to bottom, transparent 0%, black 40%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 40%)",
             }}
-          >
-            DEGRADED TICK: GraphQL ownership resolution failed, so the verifier carried forward the last known state.
-            {degradedReason ? ` ${degradedReason}` : ""}
-          </div>
-        )}
-        {/* Row 1, col 1: Scoreboard */}
-        <motion.div
-          custom={0}
-          variants={panelVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ background: "var(--bg-terminal)", height: "100%" }}
-        >
-          <TerminalPanel accent="default" style={{ height: "100%" }}>
-            {tribeScores.length >= 2 ? (
-              <WarScoreboard tribeScores={tribeScores} systems={rawSystems} />
-            ) : (
-              <div
-                style={{
-                  color: "var(--text-dim)",
-                  fontFamily: "IBM Plex Mono",
-                  fontSize: "0.7rem",
-                }}
-              >
-                Waiting for verifier-backed tribe scores.
-              </div>
-            )}
-          </TerminalPanel>
-        </motion.div>
+          />
 
-        {/* Row 1–2, col 2: Score History (spans 2 rows) */}
-        <motion.div
-          custom={1}
-          variants={panelVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ background: "var(--bg-terminal)", gridRow: "span 2", height: "100%" }}
-        >
-          <TerminalPanel title="SCORE HISTORY" accent="default" noPadBottom style={{ height: "100%" }}>
-            {chartData.length > 0 ? (
-              <WarTimeline chartData={chartData} chartSeries={chartSeries} />
-            ) : (
-              <div
-                style={{
-                  color: "var(--text-dim)",
-                  fontFamily: "IBM Plex Mono",
-                  fontSize: "0.7rem",
-                }}
-              >
-                No score history has been published yet.
-              </div>
-            )}
-          </TerminalPanel>
-        </motion.div>
-
-        {/* Row 2, col 1: Phase Status */}
-        <motion.div
-          custom={2}
-          variants={panelVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ background: "var(--bg-terminal)" }}
-        >
-          <TerminalPanel title="PHASE STATUS" accent="default">
-            <PhaseStatusPanel
-              lastTickMs={lastTickMs}
-              systems={rawSystems}
-              tribeScores={tribeScores}
-              tickCount={tickCount}
-              tickRateMinutes={tickRateMinutes}
-              phase={useMock ? MOCK_PHASE : undefined}
-              phaseStartMs={useMock ? MOCK_PHASE.startMs : chartData.length > 0 ? (chartData[0].timestamp as number) : undefined}
-              phaseEndMs={useMock ? MOCK_PHASE.endMs : (typeof envelopeConfig?.phaseEndMs === "number" && envelopeConfig.phaseEndMs > 0 ? envelopeConfig.phaseEndMs : undefined)}
-            />
-          </TerminalPanel>
-        </motion.div>
-
-        {/* Row 3, col 1: System Control */}
-        <motion.div
-          custom={3}
-          variants={panelVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ background: "var(--bg-terminal)", height: "100%" }}
-        >
-          <TerminalPanel title="SYSTEM CONTROL" accent="default" style={{ height: "100%" }}>
-            <div style={{ padding: "0.35rem" }}>
-              <SystemControlPanel
-                systems={displayedSystems}
-                tribeScores={tribeScores}
-                snapshots={snapshots}
-                systemDisplayConfigs={systemDisplayConfigs}
-              />
-            </div>
-          </TerminalPanel>
-        </motion.div>
-
-        {/* Row 3, col 2: Control Feed */}
-        <motion.div
-          custom={4}
-          variants={panelVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ background: "var(--bg-terminal)" }}
-        >
-          <TerminalPanel title="CONTROL FEED" accent="default">
-            <div style={{ padding: "0.35rem" }}>
-              <ControlFeed
-                snapshots={snapshots.length > 0 ? snapshots : undefined}
-                tribeScores={tribeScores}
-                systemNames={systemNames}
-                mockEntries={useMock ? MOCK_EVENTS : undefined}
-              />
-            </div>
-          </TerminalPanel>
-        </motion.div>
-
-        {/* Demo banner — mock mode only */}
-        {useMock && (
-          <motion.div
-            custom={5}
-            variants={panelVariants}
-            initial="hidden"
-            animate="visible"
+          <div
             style={{
-              gridColumn: "1 / -1",
-              background: "rgba(242,201,76,0.04)",
-              borderTop: "1px solid var(--yellow-dim)",
-              padding: "0.45rem 1.25rem",
-              fontFamily: "IBM Plex Mono",
-              fontSize: "0.58rem",
-              letterSpacing: "0.1em",
-              color: "var(--yellow-dim)",
-              display: "flex",
-              justifyContent: "space-between",
+              position: "relative",
+              zIndex: 1,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gridTemplateRows: "auto auto minmax(0, 1fr)",
+              gap: "1px",
+              background: "var(--border-panel)",
+              height: "100%",
+              minHeight: 0,
             }}
           >
-            <span>
-              DEMO MODE — mock data active. Set verifier snapshot envs to enable simulation/live feeds.
-            </span>
-            <span>LINEAGE WAR // TERMINAL v0.1</span>
-          </motion.div>
-        )}
-      </div>
+            {tickStatus === "degraded_frozen" && (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  padding: "0.55rem 1rem",
+                  fontFamily: "IBM Plex Mono",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.04em",
+                  color: "var(--yellow-dim)",
+                  background: "rgba(242,201,76,0.08)",
+                  borderBottom: "1px solid var(--border-panel)",
+                }}
+              >
+                DEGRADED TICK: GraphQL ownership resolution failed, so the verifier carried forward the last known state.
+                {degradedReason ? ` ${degradedReason}` : ""}
+              </div>
+            )}
 
-      {/* Subtle corpse silhouette — lower empty area only */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: "40%",
-          backgroundImage: "url(/corridorofsaddness.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-          filter: "grayscale(1) blur(2px)",
-          opacity: 0.06,
-          pointerEvents: "none",
-          zIndex: 0,
-          maskImage: "linear-gradient(to bottom, transparent 0%, black 40%)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 40%)",
-        }}
-      />
+            <motion.div
+              custom={0}
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ background: "var(--bg-terminal)", height: "100%", minHeight: 0 }}
+            >
+              <TerminalPanel accent="default" style={{ height: "100%", minHeight: 0 }}>
+                {tribeScores.length >= 2 ? (
+                  <WarScoreboard tribeScores={tribeScores} systems={rawSystems} />
+                ) : (
+                  <div
+                    style={{
+                      color: "var(--text-dim)",
+                      fontFamily: "IBM Plex Mono",
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    Waiting for verifier-backed tribe scores.
+                  </div>
+                )}
+              </TerminalPanel>
+            </motion.div>
+
+            <motion.div
+              custom={1}
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ background: "var(--bg-terminal)", gridRow: "1 / 3", height: "100%", minHeight: 0 }}
+            >
+              <TerminalPanel title="SCORE HISTORY" accent="default" noPadBottom style={{ height: "100%", minHeight: 0 }}>
+                {chartData.length > 0 ? (
+                  <WarTimeline chartData={chartData} chartSeries={chartSeries} />
+                ) : (
+                  <div
+                    style={{
+                      color: "var(--text-dim)",
+                      fontFamily: "IBM Plex Mono",
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    No score history has been published yet.
+                  </div>
+                )}
+              </TerminalPanel>
+            </motion.div>
+
+            <motion.div
+              custom={2}
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ background: "var(--bg-terminal)", minHeight: 0 }}
+            >
+              <TerminalPanel title="PHASE STATUS" accent="default" style={{ height: "100%", minHeight: 0 }}>
+                <PhaseStatusPanel
+                  lastTickMs={lastTickMs}
+                  tribeScores={tribeScores}
+                  resolvedTickCount={resolvedTickCount}
+                  tickRateMinutes={tickRateMinutes}
+                  phase={useMock ? MOCK_PHASE : undefined}
+                  phaseLabel={phaseLabel}
+                  phaseStartMs={phaseStartMs}
+                  phaseEndMs={phaseEndMs}
+                  nextPhaseStartMs={nextPhaseStartMs}
+                />
+              </TerminalPanel>
+            </motion.div>
+
+            <motion.div
+              custom={3}
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ background: "var(--bg-terminal)", height: "100%", minHeight: 0 }}
+            >
+              <TerminalPanel title="SYSTEM CONTROL" accent="default" style={{ height: "100%", minHeight: 0 }}>
+                <div style={{ padding: "0.35rem" }}>
+                  <SystemControlPanel
+                    systems={displayedSystems}
+                    tribeScores={tribeScores}
+                    snapshots={snapshots}
+                    systemDisplayConfigs={systemDisplayConfigs}
+                  />
+                </div>
+              </TerminalPanel>
+            </motion.div>
+
+            <motion.div
+              custom={4}
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ background: "var(--bg-terminal)", minHeight: 0 }}
+            >
+              <TerminalPanel title="CONTROL FEED" accent="default" style={{ height: "100%", minHeight: 0 }}>
+                <div style={{ padding: "0.35rem", height: "100%", minHeight: 0 }}>
+                  <ControlFeed
+                    snapshots={snapshots.length > 0 ? snapshots : undefined}
+                    tribeScores={tribeScores}
+                    systemNames={systemNames}
+                    mockEntries={useMock ? MOCK_EVENTS : undefined}
+                  />
+                </div>
+              </TerminalPanel>
+            </motion.div>
+
+            {useMock && (
+              <motion.div
+                custom={5}
+                variants={panelVariants}
+                initial="hidden"
+                animate="visible"
+                style={{
+                  gridColumn: "1 / -1",
+                  background: "rgba(242,201,76,0.04)",
+                  borderTop: "1px solid var(--yellow-dim)",
+                  padding: "0.45rem 1.25rem",
+                  fontFamily: "IBM Plex Mono",
+                  fontSize: "0.58rem",
+                  letterSpacing: "0.1em",
+                  color: "var(--yellow-dim)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span>
+                  DEMO MODE — mock data active. Set verifier snapshot envs to enable simulation/live feeds.
+                </span>
+                <span>LINEAGE WAR // TERMINAL v0.1</span>
+              </motion.div>
+            )}
+          </div>
+        </div>
       </div>
     </TerminalScreen>
   );

@@ -54,6 +54,7 @@ export default function TerminalPanel({
         borderColor,
         display: "flex",
         flexDirection: "column",
+        minHeight: 0,
         ...style,
       }}
     >
@@ -87,7 +88,7 @@ export default function TerminalPanel({
           )}
         </div>
       )}
-      <div style={{ padding: noPadBottom ? "0.85rem 0.85rem 0" : "0.85rem", flex: 1 }}>{children}</div>
+      <div style={{ padding: noPadBottom ? "0.85rem 0.85rem 0" : "0.85rem", flex: 1, minHeight: 0 }}>{children}</div>
     </div>
   );
 }

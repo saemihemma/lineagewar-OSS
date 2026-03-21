@@ -68,13 +68,13 @@ export function buildHeaderMeta(
   chartData: Array<{ tick: number }>,
   modeLabel: string,
 ): HeaderMetaItem[] {
-  const activeSystemCount = systems.filter((system) => system.state !== 0).length;
+  const trackedSystemCount = systems.length;
   const latestTick = chartData.at(-1)?.tick ?? 0;
 
   return [
     { label: "SOURCE", value: modeLabel },
     { label: "TICK", value: latestTick > 0 ? String(latestTick) : "WAITING" },
-    { label: "SYSTEMS", value: `${activeSystemCount} ACTIVE` },
+    { label: "SYSTEMS", value: `${trackedSystemCount} TRACKED` },
   ];
 }
 
@@ -124,7 +124,7 @@ export function buildCurrentControlFeed(payload: VerifierScoreboardPayload): Log
   });
 }
 
-/** Count consecutive ticks each system has been held by the same tribe (from most recent tick). */
+/** Count consecutive ticks each system has remained in the same resolved state from the latest tick backward. */
 export function computeHoldStreaks(snapshots: VerifierSnapshot[]): Map<string, number> {
   const bySystem = new Map<string, VerifierSnapshot[]>();
   for (const snap of snapshots) {
@@ -137,14 +137,14 @@ export function computeHoldStreaks(snapshots: VerifierSnapshot[]): Map<string, n
   const streaks = new Map<string, number>();
   for (const [key, snaps] of bySystem) {
     const sorted = [...snaps].sort((a, b) => a.tickTimestampMs - b.tickTimestampMs);
-    const lastController = sorted[sorted.length - 1]?.controllerTribeId ?? null;
-    if (lastController === null) {
-      streaks.set(key, 0);
-      continue;
-    }
+    const latest = sorted[sorted.length - 1];
+    if (!latest) continue;
     let streak = 0;
     for (let i = sorted.length - 1; i >= 0; i--) {
-      if (sorted[i].controllerTribeId === lastController) {
+      if (
+        sorted[i].state === latest.state
+        && sorted[i].controllerTribeId === latest.controllerTribeId
+      ) {
         streak++;
       } else {
         break;

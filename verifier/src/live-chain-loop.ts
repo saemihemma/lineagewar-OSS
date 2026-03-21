@@ -4,7 +4,14 @@ import "dotenv/config";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
-import { buildAuditSummary, writeVerifierArtifacts } from "./artifact-output.js";
+import { writeVerifierArtifacts } from "./artifact-output.js";
+import {
+  defaultEditorialDisplayPath,
+  readEditorialDisplayEntries,
+  readEditorialDisplayEntriesForWar,
+  resolveCurrentSystemDisplayConfigs,
+  upsertEditorialDisplayEntries,
+} from "./editorial-display-store.js";
 import { buildScoreboardPayload } from "./frontend-output.js";
 import { GraphqlAssemblyResolutionError } from "./graphql-assembly-source.js";
 import { hashCanonicalSnapshot } from "./hash.js";
@@ -16,7 +23,10 @@ import { TickLedger, type CommittedTick } from "./tick-ledger.js";
 import { buildTickPlan } from "./tick-planner.js";
 import { discoverWarConfig, refreshWarState, type DiscoveredWarConfig } from "./discover-war-config.js";
 import type {
+  EditorialDisplayEntry,
   ResolvedTickResult,
+  SystemConfigVersion,
+  SystemDisplayConfig,
   TickPlanEntry,
   TickResolutionMetadata,
   TickStatus,
@@ -133,6 +143,7 @@ interface RuntimeDiagnostics {
     graphqlUrl: string | null;
     warIdOverride: number | null;
     outputPath: string | null;
+    editorialDisplayPath: string | null;
   };
   lastDiscoveryError: RuntimeDiscoveryError | null;
   latestPublishedArtifact: PublishedArtifactSummary | null;
@@ -170,6 +181,7 @@ const runtimeDiagnostics: RuntimeDiagnostics = {
     graphqlUrl: null,
     warIdOverride: null,
     outputPath: null,
+    editorialDisplayPath: null,
   },
   lastDiscoveryError: null,
   latestPublishedArtifact: null,
@@ -214,6 +226,82 @@ function formatDuration(ms: number): string {
 
 function defaultRuntimeOutputPath(): string {
   return path.resolve(process.cwd(), "runtime/verifier/latest.json");
+}
+
+function editorialDisplayPathForOutput(outputPath: string): string {
+  return path.resolve(process.cwd(), process.env.LINEAGE_EDITORIAL_DISPLAY_PATH ?? defaultEditorialDisplayPath(outputPath));
+}
+
+interface CurrentPhaseMetadata {
+  phaseId: number | null;
+  phaseLabel: string | null;
+  phaseStartMs: number | null;
+  phaseEndMs: number | null;
+  nextPhaseStartMs: number | null;
+  tickRateMinutes: number;
+  activeSystemIds: number[];
+}
+
+function buildBootstrapTribeScores(discovered: DiscoveredWarConfig) {
+  return discovered.participatingTribeIds.map((id, index) => ({
+    id,
+    name: discovered.tribeNames[String(id)] ?? `Tribe ${id}`,
+    points: 0,
+    color: `var(--tribe-${String.fromCharCode(97 + index)})`,
+  }));
+}
+
+async function collectPhaseMetadata(
+  dataSource: RegistryBackedVerifierDataSource,
+  timestampMs: number,
+  fallbackTickMinutes: number,
+): Promise<CurrentPhaseMetadata> {
+  const warConfig = await dataSource.getWarConfigAt(timestampMs);
+  const currentPhase = await dataSource.getActivePhaseAt(timestampMs);
+  const nextPhase = await dataSource.getNextPhaseAfter(timestampMs);
+
+  return {
+    phaseId: currentPhase?.phaseId ?? null,
+    phaseLabel: currentPhase?.displayName ?? null,
+    phaseStartMs: currentPhase?.effectiveFromMs ?? null,
+    phaseEndMs: currentPhase?.effectiveUntilMs ?? nextPhase?.effectiveFromMs ?? null,
+    nextPhaseStartMs: nextPhase?.effectiveFromMs ?? currentPhase?.effectiveUntilMs ?? null,
+    tickRateMinutes: currentPhase?.tickMinutesOverride ?? warConfig.defaultTickMinutes ?? fallbackTickMinutes,
+    activeSystemIds: currentPhase?.activeSystemIds ? [...currentPhase.activeSystemIds] : [],
+  };
+}
+
+async function collectActiveSystemConfigs(
+  dataSource: RegistryBackedVerifierDataSource,
+  systemIds: number[],
+  timestampMs: number,
+): Promise<SystemConfigVersion[]> {
+  const results = await Promise.all(
+    [...new Set(systemIds)].map(async (systemId) => {
+      try {
+        return await dataSource.getSystemConfigAt(systemId, timestampMs);
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return results
+    .filter((entry): entry is SystemConfigVersion => entry !== null)
+    .sort((a, b) => a.systemId - b.systemId);
+}
+
+function buildBootstrapSystems(
+  systemConfigs: SystemConfigVersion[],
+  systemDisplayConfigs: SystemDisplayConfig[],
+) {
+  const displayBySystemId = new Map(systemDisplayConfigs.map((entry) => [String(entry.systemId), entry]));
+  return systemConfigs.map((config) => ({
+    id: String(config.systemId),
+    name: displayBySystemId.get(String(config.systemId))?.displayName || String(config.systemId),
+    state: 0,
+    pointsPerTick: config.pointsPerTick,
+  }));
 }
 
 function looksLikePackageId(value: string | null | undefined): boolean {
@@ -525,7 +613,10 @@ function buildVerifierConfig(
     tickStartMs: Date.now(),
     tickCount: 1,
     phaseStatusWithheld: false,
+    phaseId: null,
+    phaseStartMs: null,
     phaseEndMs: null,
+    nextPhaseStartMs: null,
     phaseLabel: null,
     warEndMs: null,
     outputJson: false,
@@ -572,16 +663,49 @@ function buildVerifierConfig(
 }
 
 async function writeBootstrapScoreboard(
+  config: VerifierConfig,
   discovered: DiscoveredWarConfig,
   outputPath: string,
-  tickRateMinutes: number,
+  fallbackTickRateMinutes: number,
 ): Promise<void> {
-  const tribeScores = discovered.participatingTribeIds.map((id, index) => ({
-    id,
-    name: discovered.tribeNames[String(id)] ?? `Tribe ${id}`,
-    points: 0,
-    color: `var(--tribe-${String.fromCharCode(97 + index)})`,
-  }));
+  const now = Date.now();
+  const dataSource = new RegistryBackedVerifierDataSource(config);
+  const phaseMetadata = await collectPhaseMetadata(dataSource, now, fallbackTickRateMinutes);
+  const activeSystemIds =
+    phaseMetadata.activeSystemIds.length > 0 ? phaseMetadata.activeSystemIds : discovered.warSystemIds;
+  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(
+    config.systemDisplayConfigPath,
+    process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
+  );
+  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPathForOutput(outputPath));
+  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
+    entries: editorialDisplayEntries,
+    legacyConfigs: legacySystemDisplayConfigs,
+    warId: discovered.warId,
+    atMs: now,
+    phaseId: phaseMetadata.phaseId,
+    systemIds: activeSystemIds,
+  });
+  const systemConfigs = await collectActiveSystemConfigs(dataSource, activeSystemIds, now);
+  const tribeScores = buildBootstrapTribeScores(discovered);
+  const auditInputs = dataSource.getAuditInputSummary?.() ?? {
+    candidateCollection: { mode: "registry_live_objects" },
+    activeSystems: { mode: "phase_config_live" },
+    ownerResolution: { mode: "graphql_ownercap_chain" },
+    locationResolution: { mode: "live_system_field_runtime_mapping" },
+  };
+  auditInputs.activeSystems = {
+    mode: "phase_config_live",
+    detail:
+      phaseMetadata.phaseLabel && activeSystemIds.length > 0
+        ? `${phaseMetadata.phaseLabel} // ${activeSystemIds.join(", ")}`
+        : phaseMetadata.phaseLabel
+          ? `${phaseMetadata.phaseLabel} // no active systems`
+          : activeSystemIds.length > 0
+            ? activeSystemIds.join(", ")
+            : "No active systems published yet.",
+    objectCount: activeSystemIds.length,
+  };
   const initialEnvelope = {
     tickStatus: null,
     degradedReason: null,
@@ -589,9 +713,16 @@ async function writeBootstrapScoreboard(
     config: {
       source: "live-chain",
       warId: discovered.warId,
-      tickStartMs: Date.now(),
+      tickStartMs: now,
       tickCount: 0,
       phaseStatusWithheld: false,
+      phaseId: phaseMetadata.phaseId,
+      phaseStartMs: phaseMetadata.phaseStartMs,
+      phaseEndMs: phaseMetadata.phaseEndMs,
+      nextPhaseStartMs: phaseMetadata.nextPhaseStartMs,
+      phaseLabel: phaseMetadata.phaseLabel,
+      warEndMs: discovered.endedAtMs,
+      tickRateMinutes: phaseMetadata.tickRateMinutes,
       tickStatus: null,
       degradedReason: null,
       carriedForwardFromTickMs: null,
@@ -602,9 +733,9 @@ async function writeBootstrapScoreboard(
     scoreboard: {
       warName: discovered.warDisplayName || `War ${discovered.warId}`,
       lastTickMs: null,
-      tickRateMinutes,
+      tickRateMinutes: phaseMetadata.tickRateMinutes,
       tribeScores,
-      systems: [],
+      systems: buildBootstrapSystems(systemConfigs, systemDisplayConfigs),
       chartData: [],
       chartSeries: tribeScores.map((tribeScore) => ({
         tribeId: tribeScore.id,
@@ -615,12 +746,10 @@ async function writeBootstrapScoreboard(
       commitments: [],
       snapshots: [],
     },
-    systemDisplayConfigs: [],
+    systemDisplayConfigs,
   };
 
-  const { mkdirSync, writeFileSync } = await import("node:fs");
-  mkdirSync(path.dirname(outputPath), { recursive: true });
-  writeFileSync(outputPath, JSON.stringify(initialEnvelope, null, 2) + "\n", "utf8");
+  await writeVerifierArtifacts(outputPath, initialEnvelope, "live-chain", auditInputs, [], editorialDisplayEntries);
 }
 
 async function runTick(
@@ -643,20 +772,31 @@ async function runTick(
   const dataSource = new RegistryBackedVerifierDataSource(config);
   const currentWarConfig = await dataSource.getWarConfigAt(now);
   const currentPhase = await dataSource.getActivePhaseAt(now);
+  const nextPhase = await dataSource.getNextPhaseAfter(now);
+  const currentPhaseEndMs = currentPhase?.effectiveUntilMs ?? nextPhase?.effectiveFromMs ?? null;
+  const nextPhaseStartMs = nextPhase?.effectiveFromMs ?? currentPhase?.effectiveUntilMs ?? null;
+  const currentEffectiveTickMinutes = currentPhase?.tickMinutesOverride ?? currentWarConfig.defaultTickMinutes;
   runtimeDiagnostics.lastActivePhase = {
     atMs: now,
     warConfigDefaultTickMinutes: currentWarConfig.defaultTickMinutes,
     phaseId: currentPhase?.phaseId ?? null,
     displayName: currentPhase?.displayName ?? null,
     effectiveFromMs: currentPhase?.effectiveFromMs ?? null,
-    effectiveUntilMs: currentPhase?.effectiveUntilMs ?? null,
+    effectiveUntilMs: currentPhaseEndMs,
     tickMinutesOverride: currentPhase?.tickMinutesOverride ?? null,
     activeSystemIds: currentPhase?.activeSystemIds ? [...currentPhase.activeSystemIds] : [],
   };
+  config.phaseId = currentPhase?.phaseId ?? null;
+  config.phaseStartMs = currentPhase?.effectiveFromMs ?? null;
+  config.phaseEndMs = currentPhaseEndMs;
+  config.nextPhaseStartMs = nextPhaseStartMs;
+  config.phaseLabel = currentPhase?.displayName ?? null;
+  config.warEndMs = warEndMs ?? discovered.endedAtMs ?? null;
+  runtimeStatus.tickRateMinutes = currentEffectiveTickMinutes;
   console.log(
     `  Active phase: ${currentPhase ? `${currentPhase.displayName} (#${currentPhase.phaseId})` : "none"} | `
     + `phase systems: ${currentPhase?.activeSystemIds.length ?? 0} | `
-    + `effective tick: ${(currentPhase?.tickMinutesOverride ?? currentWarConfig.defaultTickMinutes)}m`,
+    + `effective tick: ${currentEffectiveTickMinutes}m`,
   );
 
   if (config.chain.locationQueryMode !== "off") {
@@ -715,10 +855,21 @@ async function runTick(
     + `${currentBoundaryEntries.length} for current boundary | `
     + `systems: ${currentBoundarySystemIds.length > 0 ? currentBoundarySystemIds.join(", ") : "none"}`,
   );
-  const systemDisplayConfigs = loadSystemDisplayConfigs(
+  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(
     config.systemDisplayConfigPath,
     process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
   );
+  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPathForOutput(outputPath));
+  const currentDisplaySystemIds =
+    currentPhase?.activeSystemIds.length ? currentPhase.activeSystemIds : discovered.warSystemIds;
+  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
+    entries: editorialDisplayEntries,
+    legacyConfigs: legacySystemDisplayConfigs,
+    warId: discovered.warId,
+    atMs: now,
+    phaseId: currentPhase?.phaseId ?? null,
+    systemIds: currentDisplaySystemIds,
+  });
 
   // Load ALL committed ticks from the ledger -- this is the permanent scoring history
   const committedMap = new Map<string, ResolvedTickResult>();
@@ -866,6 +1017,10 @@ async function runTick(
     resolved.map((e) => e.snapshot),
     resolved.map((e) => e.commitment),
     discovered.participatingTribeIds,
+    {
+      tickRateMinutes: currentEffectiveTickMinutes,
+      systemDisplayConfigs,
+    },
   );
 
   const envelope = {
@@ -878,6 +1033,13 @@ async function runTick(
       tickStartMs,
       tickCount: historicalTickCount,
       phaseStatusWithheld: config.phaseStatusWithheld,
+      phaseId: config.phaseId,
+      phaseStartMs: config.phaseStartMs,
+      phaseEndMs: config.phaseEndMs,
+      nextPhaseStartMs: config.nextPhaseStartMs,
+      phaseLabel: config.phaseLabel,
+      warEndMs: config.warEndMs,
+      tickRateMinutes: currentEffectiveTickMinutes,
       tickStatus,
       degradedReason,
       carriedForwardFromTickMs,
@@ -890,7 +1052,7 @@ async function runTick(
     ...(corrections.length > 0 ? { corrections } : {}),
   };
 
-  await writeVerifierArtifacts(outputPath, envelope, "live-chain", auditInputs, resolved);
+  await writeVerifierArtifacts(outputPath, envelope, "live-chain", auditInputs, resolved, editorialDisplayEntries);
   refreshPublishedArtifactSummary(outputPath);
 
   // Log latest tick results
@@ -998,7 +1160,7 @@ async function runWarLoop(
   }
 
   // Write initial scoreboard immediately so the frontend has fresh war data
-  await writeBootstrapScoreboard(discovered, outputPath, currentTickMinutes);
+  await writeBootstrapScoreboard(currentConfig, discovered, outputPath, currentTickMinutes);
   refreshPublishedArtifactSummary(outputPath);
   console.log(`Wrote initial scoreboard for War ${discovered.warId} to ${outputPath}`);
   runtimeStatus.lastTickMs = null;
@@ -1361,7 +1523,7 @@ async function runWarLoop(
     const readyToScore = freshState.systemConfigIds.length > 0;
 
     if (!readyToScore) {
-      await writeBootstrapScoreboard(discovered, outputPath, currentTickMinutes);
+      await writeBootstrapScoreboard(currentConfig, discovered, outputPath, currentTickMinutes);
       refreshPublishedArtifactSummary(outputPath);
       runtimeStatus.state = "waiting";
       runtimeStatus.tickRateMinutes = currentTickMinutes;
@@ -1424,6 +1586,7 @@ async function runWarLoop(
 async function startHttpServer(
   getStatus: () => Record<string, unknown>,
   verifierArtifactDir: string,
+  editorialDisplayPath: string,
 ): Promise<void> {
   const http = await import("node:http");
   const fs = await import("node:fs");
@@ -1496,7 +1659,8 @@ async function startHttpServer(
   }
 
   const server = http.createServer((req, res) => {
-    const url = req.url || "/";
+    const requestUrl = new URL(req.url || "/", "http://localhost");
+    const url = requestUrl.pathname;
 
     if (req.method === "GET" && url === "/status") {
       res.writeHead(200, {
@@ -1505,6 +1669,28 @@ async function startHttpServer(
         ...noStoreHeaders,
       });
       res.end(JSON.stringify(getStatus(), null, 2));
+      return;
+    }
+
+    if (req.method === "GET" && url === "/editorial-display") {
+      const warId = Number(requestUrl.searchParams.get("warId"));
+      if (!Number.isFinite(warId) || warId <= 0) {
+        res.writeHead(400, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          ...noStoreHeaders,
+        });
+        res.end(JSON.stringify({ ok: false, error: "warId query parameter is required" }));
+        return;
+      }
+
+      const entries = readEditorialDisplayEntriesForWar(editorialDisplayPath, warId);
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        ...noStoreHeaders,
+      });
+      res.end(JSON.stringify({ ok: true, warId, count: entries.length, entries }));
       return;
     }
 
@@ -1541,6 +1727,105 @@ async function startHttpServer(
           ...noStoreHeaders,
         });
         res.end(JSON.stringify({ ok: true, message: "Re-discovery triggered", hint }));
+      });
+      return;
+    }
+
+    if (req.method === "POST" && url === "/editorial-display") {
+      const bodyChunks: Buffer[] = [];
+      req.on("data", (chunk) => bodyChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      req.on("end", async () => {
+        type EditorialBody = {
+          warId?: unknown;
+          phaseId?: unknown;
+          effectiveFromMs?: unknown;
+          reason?: unknown;
+          systems?: Array<{
+            systemId?: unknown;
+            displayName?: unknown;
+            publicRuleText?: unknown;
+          }>;
+        };
+
+        let payload: EditorialBody = {};
+        const raw = Buffer.concat(bodyChunks).toString("utf8").trim();
+        if (raw.length > 0) {
+          try {
+            payload = JSON.parse(raw) as EditorialBody;
+          } catch {
+            res.writeHead(400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+            res.end(JSON.stringify({ ok: false, error: "Invalid JSON body" }));
+            return;
+          }
+        }
+
+        const warId = Number(payload.warId);
+        const effectiveFromMs = Number(payload.effectiveFromMs);
+        const phaseIdRaw = Number(payload.phaseId);
+        const systems = Array.isArray(payload.systems) ? payload.systems : [];
+
+        if (!Number.isFinite(warId) || warId <= 0 || !Number.isFinite(effectiveFromMs) || systems.length === 0) {
+          res.writeHead(400, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            ...noStoreHeaders,
+          });
+          res.end(JSON.stringify({ ok: false, error: "warId, effectiveFromMs, and at least one system are required" }));
+          return;
+        }
+
+        const entries: EditorialDisplayEntry[] = systems
+          .map((system) => {
+            const systemId = String(system.systemId ?? "").trim();
+            if (!systemId) return null;
+            const displayName = typeof system.displayName === "string" ? system.displayName.trim() : "";
+            const publicRuleText = typeof system.publicRuleText === "string" ? system.publicRuleText.trim() : "";
+            return {
+              warId,
+              phaseId: Number.isFinite(phaseIdRaw) ? phaseIdRaw : null,
+              systemId,
+              effectiveFromMs,
+              updatedAtMs: Date.now(),
+              ...(displayName ? { displayName } : {}),
+              publicRuleText,
+            } satisfies EditorialDisplayEntry;
+          })
+          .filter((entry): entry is EditorialDisplayEntry => entry !== null);
+
+        if (entries.length === 0) {
+          res.writeHead(400, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            ...noStoreHeaders,
+          });
+          res.end(JSON.stringify({ ok: false, error: "No valid system display entries were provided" }));
+          return;
+        }
+
+        try {
+          await upsertEditorialDisplayEntries(editorialDisplayPath, entries);
+          const hint = rememberNotifyHint({
+            warId,
+            reason: typeof payload.reason === "string" ? payload.reason : "editorial-display",
+          });
+          console.log(
+            `\n[${new Date().toISOString()}] Stored ${entries.length} editorial display entr${entries.length === 1 ? "y" : "ies"} for war ${warId}`,
+          );
+          triggerNotify();
+          res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            ...noStoreHeaders,
+          });
+          res.end(JSON.stringify({ ok: true, count: entries.length, hint }));
+        } catch (error) {
+          res.writeHead(500, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            ...noStoreHeaders,
+          });
+          res.end(JSON.stringify({ ok: false, error: errorMessage(error) }));
+        }
       });
       return;
     }
@@ -1645,6 +1930,7 @@ async function main(): Promise<void> {
     graphqlUrl,
     warIdOverride: Number.isFinite(warIdOverride) ? warIdOverride : null,
     outputPath,
+    editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
   };
   refreshPublishedArtifactSummary(outputPath);
   console.log(
@@ -1667,7 +1953,7 @@ async function main(): Promise<void> {
       now: Date.now(),
       notifyHint: currentNotifyHint(),
       diagnostics: runtimeDiagnostics,
-    }), path.dirname(outputPath));
+    }), path.dirname(outputPath), editorialDisplayPathForOutput(outputPath));
   }
 
   console.log("Discovering war configuration from chain...");

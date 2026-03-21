@@ -3,6 +3,7 @@ import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   AuditInputSummary,
+  EditorialDisplayEntry,
   AuditScoreboardPoint,
   ResolvedTickResult,
   ScoreboardPayload,
@@ -11,6 +12,7 @@ import {
   TickAuditIndex,
   VerifierAuditSummary,
 } from "./types.js";
+import { resolveEditorialDisplayForTick } from "./editorial-display-store.js";
 
 const ARTIFACT_VERSION = 1;
 
@@ -101,12 +103,12 @@ function buildTickArtifact(
   entries: ResolvedTickResult[],
   scoreboard: ScoreboardPayload | null,
   systemDisplayConfigs: SystemDisplayConfig[],
+  editorialDisplayEntries: EditorialDisplayEntry[],
   sourceMode: string,
   inputs: AuditInputSummary,
   receiptPath: string,
 ): TickAuditArtifact {
   const orderedEntries = [...entries].sort((a, b) => a.snapshot.systemId - b.snapshot.systemId);
-  const editorialBySystemId = new Map(systemDisplayConfigs.map((entry) => [entry.systemId, entry]));
   const tickMetadata = orderedEntries[0]?.snapshot.resolutionMetadata;
 
   return {
@@ -134,7 +136,14 @@ function buildTickArtifact(
       resolution: entry.resolution,
       presenceRows: entry.presenceRows,
       candidateAssemblies: entry.assemblies,
-      editorialDisplay: editorialBySystemId.get(String(entry.snapshot.systemId)) ?? null,
+      editorialDisplay: resolveEditorialDisplayForTick({
+        entries: editorialDisplayEntries,
+        legacyConfigs: systemDisplayConfigs,
+        warId: entry.snapshot.warId,
+        phaseId: entry.snapshot.config.phaseId,
+        systemId: entry.snapshot.systemId,
+        tickTimestampMs,
+      }),
     })),
     receiptPath,
   };
@@ -215,6 +224,7 @@ export async function writeVerifierArtifacts(
   sourceMode: string,
   inputs: AuditInputSummary,
   resolved: ResolvedTickResult[],
+  editorialDisplayEntries: EditorialDisplayEntry[] = [],
 ): Promise<VerifierAuditSummary> {
   const absoluteOutputPath = path.resolve(process.cwd(), outputPath);
   const outputDirectory = path.dirname(absoluteOutputPath);
@@ -245,6 +255,7 @@ export async function writeVerifierArtifacts(
         tickEntries,
         envelopeWithoutAudit.scoreboard,
         envelopeWithoutAudit.systemDisplayConfigs ?? [],
+        editorialDisplayEntries,
         sourceMode,
         inputs,
         toPosixRelativePath(outputDirectory, receiptPath),

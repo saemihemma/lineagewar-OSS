@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import TerminalScreen from "../components/terminal/TerminalScreen";
-import TerminalHeader from "../components/terminal/TerminalHeader";
 import TerminalPanel from "../components/terminal/TerminalPanel";
+import TerminalRouteFrame, { TerminalRouteMessage } from "../components/terminal/TerminalRouteFrame";
 import StatRow from "../components/telemetry/StatRow";
 import SystemStatusPanel from "../components/system/SystemStatusPanel";
 import SystemControlHistoryPanel from "../components/system/SystemControlHistoryPanel";
@@ -89,27 +88,20 @@ function backLink() {
         textDecoration: "none",
       }}
     >
-      ← WAR OVERVIEW
+      {"<- WAR OVERVIEW"}
     </Link>
   );
 }
 
 function renderUnavailable(message: string) {
   return (
-    <TerminalScreen>
-      <TerminalHeader title="LINEAGE WAR // SYSTEM TELEMETRY" status="STANDBY" right={backLink()} />
-      <div
-        style={{
-          padding: "3rem",
-          textAlign: "center",
-          color: "var(--text-dim)",
-          fontFamily: "IBM Plex Mono",
-          fontSize: "0.8rem",
-        }}
-      >
-        <div>{message}</div>
-      </div>
-    </TerminalScreen>
+    <TerminalRouteMessage
+      title="LINEAGE WAR // SYSTEM TELEMETRY"
+      status="STANDBY"
+      right={backLink()}
+      message={message}
+      messageStyle={{ textAlign: "center" }}
+    />
   );
 }
 
@@ -123,6 +115,7 @@ export default function SystemPage() {
       useVerifier && VERIFIER_POLL_INTERVAL_MS > 0 ? VERIFIER_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
   });
+
   const verifierData = verifierEnvelope?.scoreboard;
   const resolvedSystemNames = useResolvedSystemNames(
     id ? [id] : [],
@@ -157,6 +150,7 @@ export default function SystemPage() {
 
     const snapshots = verifierEnvelope?.snapshots ?? liveVerifierData.snapshots ?? [];
     const commitments = verifierEnvelope?.commitments ?? liveVerifierData.commitments ?? [];
+
     return snapshots
       .filter((snapshot) => String(snapshot.systemId) === id)
       .sort((a, b) => a.tickTimestampMs - b.tickTimestampMs)
@@ -172,7 +166,7 @@ export default function SystemPage() {
   }, [id, liveVerifierData, useMock, verifierEnvelope]);
 
   if (!id) {
-    return renderUnavailable('System route is missing an ID.');
+    return renderUnavailable("System route is missing an ID.");
   }
 
   if (!useMock && error) {
@@ -206,45 +200,50 @@ export default function SystemPage() {
       ? tribeScores.find((tribe) => tribe.id === system.controller)?.name ?? fallbackTribeName(system.controller)
       : stateLabel(system.state);
   const systemClass =
-    useMock && "priority" in system && system.priority === "high" ? "HIGH VALUE" : useMock ? "STANDARD" : "VERIFIER TRACKED";
+    useMock && "priority" in system && system.priority === "high"
+      ? "HIGH VALUE"
+      : useMock
+        ? "STANDARD"
+        : "VERIFIER TRACKED";
   const lastTickDisplay = !useMock && verifierData ? formatUtcTimestamp(verifierData.lastTickMs) : "Not available";
 
   return (
-    <TerminalScreen>
-      <TerminalHeader
-        title={system.name.toUpperCase()}
-        meta={[
-          { label: "ID", value: system.id.toUpperCase() },
-          {
-            label: "CLASS",
-            value: systemClass,
-          },
-        ]}
-        status="ACTIVE"
-        right={backLink()}
-      />
-
+    <TerminalRouteFrame
+      title={system.name.toUpperCase()}
+      meta={[
+        { label: "ID", value: system.id.toUpperCase() },
+        { label: "CLASS", value: systemClass },
+      ]}
+      status="ACTIVE"
+      right={backLink()}
+      bodyStyle={{
+        display: "grid",
+        gridTemplateRows: "minmax(0, 1fr) minmax(220px, 0.7fr)",
+        overflow: "hidden",
+      }}
+    >
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
-          gridTemplateRows: "auto auto",
+          gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)",
           gap: "1px",
           background: "var(--border-panel)",
-          minHeight: "calc(100vh - 48px)",
+          minHeight: 0,
+          overflow: "hidden",
         }}
       >
-        {/* STATUS — top left, 2 cols */}
         <motion.div
           custom={0}
           variants={panelVariants}
           initial="hidden"
           animate="visible"
-          style={{ gridColumn: "1 / 3", background: "var(--bg-terminal)" }}
+          style={{ gridColumn: "1 / 3", background: "var(--bg-terminal)", minHeight: 0 }}
         >
           <TerminalPanel
             title="SYSTEM STATUS"
             accent={system.controller === tribeScores[1]?.id ? "tribeB" : system.state === 1 ? "contested" : system.state === 0 ? "neutral" : "tribeA"}
+            style={{ height: "100%", minHeight: 0 }}
           >
             {useMock ? (
               <SystemStatusPanel
@@ -275,19 +274,18 @@ export default function SystemPage() {
           </TerminalPanel>
         </motion.div>
 
-        {/* CONNECTIONS — top right */}
         <motion.div
           custom={1}
           variants={panelVariants}
           initial="hidden"
           animate="visible"
-          style={{ gridRow: "1 / 3", background: "var(--bg-terminal)" }}
+          style={{ gridRow: "1 / 3", background: "var(--bg-terminal)", minHeight: 0 }}
         >
-          <TerminalPanel title="NODE CONNECTIONS" accent="default">
+          <TerminalPanel title="NODE CONNECTIONS" accent="default" style={{ height: "100%", minHeight: 0 }}>
             {useMock ? (
               <SystemConnectionsPanel system={system} neighbors={neighbors} tribeColorById={tribeColorById} />
             ) : (
-              <div style={{ display: "grid", gap: "0.5rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
+              <div style={{ display: "grid", gap: "0.5rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono", fontSize: "0.68rem", height: "100%", minHeight: 0, overflowY: "auto" }}>
                 <div>Public verifier payload does not expose inter-system topology yet.</div>
                 <div>The war page still renders current system control, but this detail route avoids inventing fake neighbors.</div>
               </div>
@@ -295,15 +293,14 @@ export default function SystemPage() {
           </TerminalPanel>
         </motion.div>
 
-        {/* CONTROL HISTORY — bottom left */}
         <motion.div
           custom={2}
           variants={panelVariants}
           initial="hidden"
           animate="visible"
-          style={{ background: "var(--bg-terminal)" }}
+          style={{ background: "var(--bg-terminal)", minHeight: 0 }}
         >
-          <TerminalPanel title="CONTROL HISTORY" accent="default">
+          <TerminalPanel title="CONTROL HISTORY" accent="default" style={{ height: "100%", minHeight: 0 }}>
             {useMock ? (
               <SystemControlHistoryPanel
                 tribeACycles={cycles.tribeA}
@@ -313,16 +310,17 @@ export default function SystemPage() {
                 tribeBName={tribeScores[1]?.name}
               />
             ) : (
-              <div style={{ display: "grid", gap: "0.4rem", fontFamily: "IBM Plex Mono", fontSize: "0.67rem" }}>
+              <div style={{ display: "grid", gap: "0.4rem", fontFamily: "IBM Plex Mono", fontSize: "0.67rem", height: "100%", minHeight: 0, overflowY: "auto" }}>
                 {liveHistory.length === 0 ? (
                   <div style={{ color: "var(--text-dim)" }}>No published system history yet.</div>
                 ) : (
                   liveHistory.slice().reverse().map(({ snapshot, commitment }) => {
-                    const controllerName =
+                    const priorControllerName =
                       snapshot.controllerTribeId === null
                         ? "None"
                         : tribeScores.find((tribe) => tribe.id === snapshot.controllerTribeId)?.name ??
                           fallbackTribeName(snapshot.controllerTribeId);
+
                     return (
                       <div
                         key={`${snapshot.systemId}-${snapshot.tickTimestampMs}`}
@@ -332,7 +330,7 @@ export default function SystemPage() {
                           {formatUtcTimestamp(snapshot.tickTimestampMs)}
                         </div>
                         <div style={{ color: "var(--text-dim)" }}>
-                          {snapshot.state} // {controllerName} // +{commitment?.pointsAwarded ?? 0}
+                          {snapshot.state} // {priorControllerName} // +{commitment?.pointsAwarded ?? 0}
                         </div>
                         <div style={{ color: "var(--yellow-dim)", wordBreak: "break-all" }}>
                           {commitment?.snapshotHash ?? "No snapshot hash published"}
@@ -346,19 +344,18 @@ export default function SystemPage() {
           </TerminalPanel>
         </motion.div>
 
-        {/* INFRASTRUCTURE — bottom middle */}
         <motion.div
           custom={3}
           variants={panelVariants}
           initial="hidden"
           animate="visible"
-          style={{ background: "var(--bg-terminal)" }}
+          style={{ background: "var(--bg-terminal)", minHeight: 0 }}
         >
-          <TerminalPanel title="INFRASTRUCTURE" accent="default">
+          <TerminalPanel title="INFRASTRUCTURE" accent="default" style={{ height: "100%", minHeight: 0 }}>
             {useMock ? (
               <SystemInfrastructurePanel items={infrastructure} />
             ) : (
-              <div style={{ display: "grid", gap: "0.5rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
+              <div style={{ display: "grid", gap: "0.5rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono", fontSize: "0.68rem", height: "100%", minHeight: 0, overflowY: "auto" }}>
                 <div>Infrastructure breakdown is not part of the current public scoreboard contract.</div>
                 <div>When verifier snapshots expose system-level explainability, this panel can switch from placeholder text to real telemetry.</div>
               </div>
@@ -367,21 +364,22 @@ export default function SystemPage() {
         </motion.div>
       </div>
 
-      {/* Tactical log — full width below grid */}
       <motion.div
         custom={4}
         variants={panelVariants}
         initial="hidden"
         animate="visible"
-        style={{ background: "var(--bg-terminal)", borderTop: "1px solid var(--border-panel)" }}
+        style={{ background: "var(--bg-terminal)", borderTop: "1px solid var(--border-panel)", minHeight: 0 }}
       >
-        <TerminalPanel title={`TACTICAL LOG — ${system.name.toUpperCase()}`} accent="default">
-          <SystemTacticalLogPanel
-            entries={useMock ? mockEventsForSystem(system.id) : liveSystemFeed}
-            systemName={system.name}
-          />
+        <TerminalPanel title={`TACTICAL LOG - ${system.name.toUpperCase()}`} accent="default" style={{ height: "100%", minHeight: 0 }}>
+          <div style={{ height: "100%", minHeight: 0, overflowY: "auto" }}>
+            <SystemTacticalLogPanel
+              entries={useMock ? mockEventsForSystem(system.id) : liveSystemFeed}
+              systemName={system.name}
+            />
+          </div>
         </TerminalPanel>
       </motion.div>
-    </TerminalScreen>
+    </TerminalRouteFrame>
   );
 }

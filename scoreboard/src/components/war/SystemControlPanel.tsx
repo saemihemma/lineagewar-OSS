@@ -105,7 +105,7 @@ export default function SystemControlPanel({
         const label = stateLabel(system.state, system.controller, tribeScores);
         const streak = holdStreaks.get(String(system.id)) ?? 0;
         const config = configById.get(String(system.id));
-        const ruleText = config?.publicRuleText ?? "—";
+        const ruleText = config?.publicRuleText?.trim() || "—";
 
         return (
           <div key={system.id} style={{ display: "contents" }}>

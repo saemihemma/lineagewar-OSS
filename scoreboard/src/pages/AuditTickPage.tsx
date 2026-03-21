@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import TerminalScreen from "../components/terminal/TerminalScreen";
-import TerminalHeader from "../components/terminal/TerminalHeader";
 import TerminalPanel from "../components/terminal/TerminalPanel";
+import TerminalRouteFrame, { TerminalRouteMessage } from "../components/terminal/TerminalRouteFrame";
 import { VERIFIER_SNAPSHOT_URL } from "../lib/constants";
 import { fallbackTribeName, formatUtcTimestamp } from "../lib/public-war";
 import {
@@ -42,12 +41,12 @@ function backLink() {
 
 function renderMessage(title: string, message: string) {
   return (
-    <TerminalScreen>
-      <TerminalHeader title={title} status="STANDBY" right={backLink()} />
-      <div style={{ padding: "3rem", color: "var(--text-dim)", fontFamily: "IBM Plex Mono" }}>
-        {message}
-      </div>
-    </TerminalScreen>
+    <TerminalRouteMessage
+      title={title}
+      status="STANDBY"
+      right={backLink()}
+      message={message}
+    />
   );
 }
 
@@ -119,145 +118,149 @@ export default function AuditTickPage() {
   }
 
   return (
-    <TerminalScreen>
-      <TerminalHeader
-        title={`Tick ${formatUtcTimestamp(artifact.tickTimestampMs)}`}
-        meta={[
-          { label: "SOURCE", value: presentSourceLabel(artifact.sourceMode) },
-          { label: "SYSTEMS", value: String(artifact.systems.length) },
-          { label: "VERSION", value: artifact.verifierVersion },
-        ]}
-        status="ACTIVE"
-        right={backLink()}
-      />
+    <TerminalRouteFrame
+      title={`Tick ${formatUtcTimestamp(artifact.tickTimestampMs)}`}
+      meta={[
+        { label: "SOURCE", value: presentSourceLabel(artifact.sourceMode) },
+        { label: "SYSTEMS", value: String(artifact.systems.length) },
+        { label: "VERSION", value: artifact.verifierVersion },
+      ]}
+      status="ACTIVE"
+      right={backLink()}
+      bodyStyle={{
+        display: "grid",
+        gridTemplateColumns: "1.3fr 1fr",
+        gap: "1px",
+        background: "var(--border-panel)",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ background: "var(--bg-terminal)", minHeight: 0 }}>
+        <TerminalPanel title="SYSTEM SNAPSHOTS" accent="default" style={{ height: "100%", minHeight: 0 }}>
+          <div style={{ display: "grid", gap: "0.45rem", height: "100%", minHeight: 0, overflowY: "auto", fontFamily: "IBM Plex Mono", fontSize: "0.67rem" }}>
+            {artifact.systems.map((system) => {
+              const label = presentResolvedSystemName(system.systemId, resolvedSystemNames);
+              const receiptResult = receipt?.results.find(
+                (entry) =>
+                  entry.systemId === system.systemId &&
+                  entry.tickTimestampMs === artifact.tickTimestampMs,
+              );
+
+              return (
+                <div
+                  key={system.systemId}
+                  style={{ borderBottom: "1px solid var(--border-grid)", paddingBottom: "0.45rem" }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+                    <Link to={`/system/${system.systemId}`} style={{ color: "var(--mint)", textDecoration: "none" }}>
+                      {label.primary}
+                      {label.secondary ? (
+                        <span style={{ color: "var(--text-dim)" }}> [{label.secondary}]</span>
+                      ) : null}
+                    </Link>
+                    <span style={{ color: "var(--text-dim)" }}>{system.snapshot.state}</span>
+                  </div>
+                  <div style={{ color: "var(--text)" }}>
+                    Controller:{" "}
+                    {system.snapshot.controllerTribeId === null
+                      ? "None"
+                      : artifact.scoreboard?.tribeScores.find(
+                          (tribe) => tribe.id === system.snapshot.controllerTribeId,
+                        )?.name ?? fallbackTribeName(system.snapshot.controllerTribeId)}
+                  </div>
+                  <div style={{ color: "var(--text)" }}>Points awarded: {system.commitment.pointsAwarded}</div>
+                  <div style={{ color: "var(--text)" }}>
+                    Config version: {system.snapshot.config.systemConfigVersion}
+                  </div>
+                  <div style={{ marginTop: "0.35rem", color: "var(--text-dim)" }}>Mechanical rule inputs</div>
+                  <div style={{ color: "var(--text)" }}>
+                    Points per tick: {system.snapshot.explanation.pointsPerTick}
+                  </div>
+                  <div style={{ color: "var(--text)" }}>
+                    Storage mode: {system.snapshot.explanation.storageRequirementMode}
+                  </div>
+                  <div style={{ color: "var(--text)" }}>
+                    Assembly families: {system.snapshot.explanation.allowedAssemblyFamilies.join(", ") || "none"}
+                  </div>
+                  <div style={{ color: "var(--text)" }}>
+                    Required item types: {system.snapshot.explanation.requiredItemTypeIds.join(", ") || "none"}
+                  </div>
+                  <div style={{ marginTop: "0.35rem", color: "var(--text-dim)" }}>Editorial display copy</div>
+                  <div style={{ color: "var(--text)" }}>
+                    Display name: {label.primary}
+                  </div>
+                  <div style={{ color: "var(--text)" }}>
+                    Rule text: {system.editorialDisplay?.publicRuleText || "n/a"}
+                  </div>
+                  <div style={{ color: "var(--yellow-dim)", wordBreak: "break-all" }}>
+                    Snapshot hash: {system.commitment.snapshotHash}
+                  </div>
+                  <div style={{ color: receiptResult?.digest ? "var(--mint)" : "var(--text-dim)" }}>
+                    Commit receipt: {receiptResult?.digest ?? "not published yet"}
+                  </div>
+                  <div style={{ color: "var(--text-dim)" }}>
+                    Presence rows: {system.presenceRows.length} | Candidate assemblies: {system.candidateAssemblies.length}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </TerminalPanel>
+      </div>
 
       <div
         style={{
+          background: "var(--bg-terminal)",
           display: "grid",
-          gridTemplateColumns: "1.3fr 1fr",
+          gridTemplateRows: "repeat(3, minmax(0, 1fr))",
           gap: "1px",
-          background: "var(--border-panel)",
-          minHeight: "calc(100vh - 48px)",
+          minHeight: 0,
         }}
       >
-        <div style={{ background: "var(--bg-terminal)" }}>
-          <TerminalPanel title="SYSTEM SNAPSHOTS" accent="default">
-            <div style={{ display: "grid", gap: "0.45rem", fontFamily: "IBM Plex Mono", fontSize: "0.67rem" }}>
-              {artifact.systems.map((system) => {
-                const label = presentResolvedSystemName(system.systemId, resolvedSystemNames);
-                const receiptResult = receipt?.results.find(
-                  (entry) =>
-                    entry.systemId === system.systemId &&
-                    entry.tickTimestampMs === artifact.tickTimestampMs,
-                );
-                return (
-                  <div
-                    key={system.systemId}
-                    style={{ borderBottom: "1px solid var(--border-grid)", paddingBottom: "0.45rem" }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
-                      <Link to={`/system/${system.systemId}`} style={{ color: "var(--mint)", textDecoration: "none" }}>
-                        {label.primary}
-                        {label.secondary ? (
-                          <span style={{ color: "var(--text-dim)" }}> [{label.secondary}]</span>
-                        ) : null}
-                      </Link>
-                      <span style={{ color: "var(--text-dim)" }}>{system.snapshot.state}</span>
-                    </div>
-                    <div style={{ color: "var(--text)" }}>
-                      Controller:{" "}
-                      {system.snapshot.controllerTribeId === null
-                        ? "None"
-                        : artifact.scoreboard?.tribeScores.find(
-                            (tribe) => tribe.id === system.snapshot.controllerTribeId,
-                          )?.name ?? fallbackTribeName(system.snapshot.controllerTribeId)}
-                    </div>
-                    <div style={{ color: "var(--text)" }}>Points awarded: {system.commitment.pointsAwarded}</div>
-                    <div style={{ color: "var(--text)" }}>
-                      Config version: {system.snapshot.config.systemConfigVersion}
-                    </div>
-                    <div style={{ marginTop: "0.35rem", color: "var(--text-dim)" }}>Mechanical rule inputs</div>
-                    <div style={{ color: "var(--text)" }}>
-                      Points per tick: {system.snapshot.explanation.pointsPerTick}
-                    </div>
-                    <div style={{ color: "var(--text)" }}>
-                      Storage mode: {system.snapshot.explanation.storageRequirementMode}
-                    </div>
-                    <div style={{ color: "var(--text)" }}>
-                      Assembly families: {system.snapshot.explanation.allowedAssemblyFamilies.join(", ") || "none"}
-                    </div>
-                    <div style={{ color: "var(--text)" }}>
-                      Required item types: {system.snapshot.explanation.requiredItemTypeIds.join(", ") || "none"}
-                    </div>
-                    <div style={{ marginTop: "0.35rem", color: "var(--text-dim)" }}>Editorial display copy</div>
-                    <div style={{ color: "var(--text)" }}>
-                      Display name: {label.primary}
-                    </div>
-                    <div style={{ color: "var(--text)" }}>
-                      Rule text: {system.editorialDisplay?.publicRuleText || "—"}
-                    </div>
-                    <div style={{ color: "var(--yellow-dim)", wordBreak: "break-all" }}>
-                      Snapshot hash: {system.commitment.snapshotHash}
-                    </div>
-                    <div style={{ color: receiptResult?.digest ? "var(--mint)" : "var(--text-dim)" }}>
-                      Commit receipt: {receiptResult?.digest ?? "not published yet"}
-                    </div>
-                    <div style={{ color: "var(--text-dim)" }}>
-                      Presence rows: {system.presenceRows.length} | Candidate assemblies: {system.candidateAssemblies.length}
-                    </div>
+        <TerminalPanel title="TICK TOTALS" accent="default" style={{ height: "100%", minHeight: 0 }}>
+          <div style={{ display: "grid", gap: "0.35rem", height: "100%", minHeight: 0, overflowY: "auto", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
+            <div style={{ color: "var(--text)" }}>
+              Tick label: {artifact.scoreboard?.tick ?? "n/a"}
+            </div>
+            {(artifact.scoreboard?.tribeScores ?? []).map((tribe) => (
+              <div key={tribe.id} style={{ color: tribe.color }}>
+                {tribe.name}: {tribe.points}
+              </div>
+            ))}
+          </div>
+        </TerminalPanel>
+
+        <TerminalPanel title="INPUT PROVENANCE" accent="default" style={{ height: "100%", minHeight: 0 }}>
+          <div style={{ display: "grid", gap: "0.45rem", height: "100%", minHeight: 0, overflowY: "auto", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
+            {provenanceRows.map(({ label, presentation }) => (
+              <div key={label}>
+                <div style={{ color: "var(--text-dim)" }}>{label}</div>
+                <div style={{ color: "var(--text)" }}>{presentation.primary}</div>
+                {presentation.secondary.map((line) => (
+                  <div key={line} style={{ color: "var(--text-dim)" }}>
+                    {line}
                   </div>
-                );
-              })}
-            </div>
-          </TerminalPanel>
-        </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </TerminalPanel>
 
-        <div style={{ background: "var(--bg-terminal)", display: "grid", gap: "1px" }}>
-          <TerminalPanel title="TICK TOTALS" accent="default">
-            <div style={{ display: "grid", gap: "0.35rem", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
-              <div style={{ color: "var(--text)" }}>
-                Tick label: {artifact.scoreboard?.tick ?? "n/a"}
-              </div>
-              {(artifact.scoreboard?.tribeScores ?? []).map((tribe) => (
-                <div key={tribe.id} style={{ color: tribe.color }}>
-                  {tribe.name}: {tribe.points}
-                </div>
-              ))}
+        <TerminalPanel title="COMMIT STATUS" accent="default" style={{ height: "100%", minHeight: 0 }}>
+          <div style={{ display: "grid", gap: "0.35rem", height: "100%", minHeight: 0, overflowY: "auto", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
+            <div style={{ color: receipt ? "var(--mint)" : "var(--text-dim)" }}>
+              Receipt file: {receipt ? "published" : "not found"}
             </div>
-          </TerminalPanel>
-
-          <TerminalPanel title="INPUT PROVENANCE" accent="default">
-            <div style={{ display: "grid", gap: "0.45rem", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
-              {provenanceRows.map(({ label, presentation }) => (
-                <div key={label}>
-                  <div style={{ color: "var(--text-dim)" }}>{label}</div>
-                  <div style={{ color: "var(--text)" }}>{presentation.primary}</div>
-                  {presentation.secondary.map((line) => (
-                    <div key={line} style={{ color: "var(--text-dim)" }}>
-                      {line}
-                    </div>
-                  ))}
-                </div>
-              ))}
+            <div style={{ color: "var(--text)" }}>Mode: {receipt?.mode ?? "pending"}</div>
+            <div style={{ color: "var(--text)" }}>
+              Result count: {receipt?.results.length ?? 0}
             </div>
-          </TerminalPanel>
-
-          <TerminalPanel title="COMMIT STATUS" accent="default">
-            <div style={{ display: "grid", gap: "0.35rem", fontFamily: "IBM Plex Mono", fontSize: "0.68rem" }}>
-              <div style={{ color: receipt ? "var(--mint)" : "var(--text-dim)" }}>
-                Receipt file: {receipt ? "published" : "not found"}
-              </div>
-              <div style={{ color: "var(--text)" }}>Mode: {receipt?.mode ?? "pending"}</div>
-              <div style={{ color: "var(--text)" }}>
-                Result count: {receipt?.results.length ?? 0}
-              </div>
-              <div style={{ color: "var(--text-dim)", wordBreak: "break-all" }}>
-                Expected receipt path: {artifact.receiptPath}
-              </div>
+            <div style={{ color: "var(--text-dim)", wordBreak: "break-all" }}>
+              Expected receipt path: {artifact.receiptPath}
             </div>
-          </TerminalPanel>
-        </div>
+          </div>
+        </TerminalPanel>
       </div>
-    </TerminalScreen>
+    </TerminalRouteFrame>
   );
 }

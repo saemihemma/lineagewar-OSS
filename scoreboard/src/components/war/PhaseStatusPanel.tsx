@@ -1,23 +1,29 @@
 import StatRow from "../telemetry/StatRow";
-import type { VerifierSystemControl, VerifierTribeScore } from "../../lib/verifier";
+import type { VerifierTribeScore } from "../../lib/verifier";
 import type { PhaseInfo } from "../../data/mock";
 
 interface PhaseStatusPanelProps {
-  lastTickMs: number;
-  systems: VerifierSystemControl[];
+  lastTickMs: number | null;
   tribeScores: VerifierTribeScore[];
-  tickCount?: number;
+  resolvedTickCount?: number;
   /** Minutes between ticks — omit or pass undefined to hide the field */
   tickRateMinutes?: number;
   /** Mock path: full phase info */
   phase?: PhaseInfo;
+  /** Live path: authoritative phase label */
+  phaseLabel?: string | null;
   /** Phase start timestamp — required for TIME ELAPSED; show UNKNOWN if absent */
   phaseStartMs?: number;
-  /** Phase end timestamp — required for TIME TO NEXT PHASE; show UNKNOWN if absent */
+  /** Phase end timestamp — optional boundary for the active phase */
   phaseEndMs?: number;
+  /** Next phase start timestamp — preferred boundary when the next phase is known */
+  nextPhaseStartMs?: number;
 }
 
-function formatTimestamp(ms: number): string {
+function formatTimestamp(ms: number | null): string {
+  if (ms == null || !Number.isFinite(ms)) {
+    return "WAITING";
+  }
   return new Date(ms).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
@@ -52,19 +58,23 @@ function formatDuration(ms: number): string {
 export default function PhaseStatusPanel({
   lastTickMs,
   tribeScores,
-  tickCount,
+  resolvedTickCount,
   tickRateMinutes,
   phase,
+  phaseLabel,
   phaseStartMs,
   phaseEndMs,
+  nextPhaseStartMs,
 }: PhaseStatusPanelProps) {
-  const phaseLabel = phase ? formatPhaseLabel(phase) : "PHASE 0";
+  const renderedPhaseLabel = phase
+    ? formatPhaseLabel(phase)
+    : phaseLabel?.trim()
+      ? phaseLabel.toUpperCase()
+      : "PHASE WAITING";
 
-  // Only derive timers from explicit props — never from client session time alone
-  const elapsed =
-    phaseStartMs !== undefined ? formatDuration(lastTickMs - phaseStartMs) : "UNKNOWN";
-  const remaining =
-    phaseEndMs !== undefined ? formatDuration(phaseEndMs - Date.now()) : "WITHHELD";
+  const elapsed = phaseStartMs !== undefined ? formatDuration(Date.now() - phaseStartMs) : "UNKNOWN";
+  const nextBoundaryMs = nextPhaseStartMs ?? phaseEndMs;
+  const remaining = nextBoundaryMs !== undefined ? formatDuration(nextBoundaryMs - Date.now()) : "WITHHELD";
 
   return (
     <div>
@@ -78,7 +88,7 @@ export default function PhaseStatusPanel({
           marginBottom: "0.65rem",
         }}
       >
-        {phaseLabel}
+        {renderedPhaseLabel}
       </div>
       <div style={{ display: "grid", gap: "0" }}>
         <StatRow label="LAST TICK" value={formatTimestamp(lastTickMs)} valueColor="var(--text-muted)" />
@@ -109,8 +119,8 @@ export default function PhaseStatusPanel({
             valueColor="var(--text-muted)"
           />
         )}
-        {tickCount !== undefined && (
-          <StatRow label="TICKS LOGGED" value={String(tickCount)} valueColor="var(--text-muted)" />
+        {resolvedTickCount !== undefined && (
+          <StatRow label="TICKS RESOLVED" value={String(resolvedTickCount)} valueColor="var(--text-muted)" />
         )}
       </div>
     </div>

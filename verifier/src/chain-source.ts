@@ -273,6 +273,15 @@ export class OnChainConfigVerifierDataSource implements VerifierDataSource {
     };
   }
 
+  async getPhaseTimeline(): Promise<PhaseConfig[]> {
+    return [...await this.fetchAllPhaseConfigs()].sort((a, b) => a.effectiveFromMs - b.effectiveFromMs);
+  }
+
+  async getNextPhaseAfter(timestampMs: number): Promise<PhaseConfig | null> {
+    const phases = await this.getPhaseTimeline();
+    return phases.find((phase) => phase.effectiveFromMs > timestampMs) ?? null;
+  }
+
   async getSystemConfigAt(systemId: number, timestampMs: number): Promise<SystemConfigVersion> {
     const matchingConfigs = await this.fetchAllSystemConfigs();
     const filtered = matchingConfigs.filter((entry) => entry.systemId === systemId);

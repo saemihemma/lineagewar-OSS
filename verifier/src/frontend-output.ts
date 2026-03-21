@@ -5,12 +5,19 @@ import {
   ScoreboardPayload,
   ScoreboardSystem,
   ScoreboardTribeScore,
+  SystemDisplayConfig,
   SnapshotCommitment,
 } from "./types.js";
 
 export interface ScoreboardMetadata {
   warName: string;
   tribeNames: Record<string, string>;
+}
+
+export interface ScoreboardBuildOptions {
+  chartWindowSize?: number;
+  tickRateMinutes?: number;
+  systemDisplayConfigs?: SystemDisplayConfig[];
 }
 
 const TRIBE_COLORS = [
@@ -37,9 +44,15 @@ export function buildScoreboardPayload(
   snapshots: CanonicalSnapshot[],
   commitments: SnapshotCommitment[],
   participatingTribeIds: number[] = [],
-  chartWindowSize?: number,
+  options: ScoreboardBuildOptions = {},
 ): ScoreboardPayload {
+  const { chartWindowSize, tickRateMinutes: explicitTickRateMinutes, systemDisplayConfigs = [] } = options;
   const resolvedTribeNames = { ...metadata.tribeNames };
+  const displayNameBySystemId = new Map(
+    systemDisplayConfigs
+      .map((config) => [String(config.systemId), config.displayName?.trim() ?? ""] as const)
+      .filter((entry) => entry[1].length > 0),
+  );
   const tribeIds = [...new Set([
     ...participatingTribeIds,
     ...snapshots.flatMap((snapshot) => snapshot.presenceRows.map((row) => row.tribeId)),
@@ -102,15 +115,16 @@ export function buildScoreboardPayload(
     .sort((a, b) => a.systemId - b.systemId)
     .map((snapshot) => ({
       id: String(snapshot.systemId),
-      name: String(snapshot.systemId),
+      name: displayNameBySystemId.get(String(snapshot.systemId)) || String(snapshot.systemId),
       state: stateToNumber(snapshot.state),
       controller: snapshot.controllerTribeId ?? undefined,
       pointsPerTick: snapshot.explanation.pointsPerTick,
     }));
 
   const displayChartData = chartWindowSize ? chartData.slice(-chartWindowSize) : chartData;
-  const tickRateMinutes =
-    chartData.length >= 2
+  const tickRateMinutes = explicitTickRateMinutes && explicitTickRateMinutes > 0
+    ? explicitTickRateMinutes
+    : chartData.length >= 2
       ? Math.max(0, (chartData[chartData.length - 1].timestamp - chartData[chartData.length - 2].timestamp) / 60_000)
       : undefined;
   const latestTickTimestamp = chartData[chartData.length - 1]?.timestamp ?? null;
