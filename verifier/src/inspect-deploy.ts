@@ -14,6 +14,17 @@ async function fetchJson(url: string): Promise<unknown> {
   return response.json();
 }
 
+function readFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 async function main(): Promise<void> {
   const base = (getArg("--base") || process.env.LINEAGE_DEPLOY_BASE || "http://127.0.0.1:3001").replace(/\/$/, "");
   const statusUrl = `${base}/status`;
@@ -31,13 +42,15 @@ async function main(): Promise<void> {
   }
 
   const statusWarId =
-    status && typeof status === "object" && "warId" in status ? Number((status as { warId?: unknown }).warId) : null;
+    status && typeof status === "object" && "warId" in status
+      ? readFiniteNumber((status as { warId?: unknown }).warId)
+      : null;
   const latestWarId =
     latest &&
     typeof latest === "object" &&
     "config" in latest &&
     (latest as { config?: { warId?: unknown } }).config
-      ? Number((latest as { config?: { warId?: unknown } }).config?.warId)
+      ? readFiniteNumber((latest as { config?: { warId?: unknown } }).config?.warId)
       : null;
 
   console.log(JSON.stringify({

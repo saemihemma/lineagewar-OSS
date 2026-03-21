@@ -419,7 +419,7 @@ export class RegistryBackedVerifierDataSource extends OnChainConfigVerifierDataS
 
   async getCandidateAssemblies(systemId: number, timestampMs: number): Promise<CandidateAssembly[]> {
     if (this.registryEntries.length === 0) {
-      return super.getCandidateAssemblies(systemId, timestampMs);
+      return [];
     }
 
     const graphqlUrl = this.config.chain.graphqlUrl;

@@ -22,7 +22,10 @@
     "submit:commit": "tsx src/submit-commit.ts",
     "verify:audit": "tsx src/verify-audit.ts",
     "start": "tsx src/live-chain-loop.ts",
-    "start:once": "tsx src/live-chain-loop.ts --once"
+    "start:once": "tsx src/live-chain-loop.ts --once",
+    "inspect:deploy": "tsx src/inspect-deploy.ts",
+    "inspect:war": "tsx src/inspect-war.ts",
+    "inspect:tick-path": "tsx src/inspect-tick-path.ts"
   },
   "dependencies": {
     "@mysten/sui": "^2.0.0",

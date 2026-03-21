@@ -1,6 +1,7 @@
 console.log(`[verifier] Starting... (pid=${process.pid}, node=${process.version}, PORT=${process.env.PORT || "unset"})`);
 
 import "dotenv/config";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 import { buildAuditSummary, writeVerifierArtifacts } from "./artifact-output.js";
@@ -40,11 +41,105 @@ interface RuntimeStatus {
   nextTickMs: number | null;
 }
 
+interface RuntimeDiscoveryError {
+  stage: string;
+  message: string;
+  atMs: number;
+}
+
 interface NotifyHint {
   warId?: number;
   txDigest?: string;
   reason?: string;
   receivedAtMs: number;
+}
+
+interface PublishedArtifactSummary {
+  path: string;
+  exists: boolean;
+  updatedAtMs: number | null;
+  warId: number | null;
+  tickCount: number | null;
+  lastTickMs: number | null;
+  tickStatus: TickStatus | null;
+  systemCount: number | null;
+  error: string | null;
+}
+
+interface RuntimeWarSnapshot {
+  warId: number;
+  warRegistryId: string;
+  warDisplayName: string;
+  warEnabled: boolean;
+  warResolved: boolean;
+  defaultTickMinutes: number;
+  configCounts: {
+    warConfigIds: number;
+    phaseConfigIds: number;
+    systemConfigIds: number;
+    warSystemIds: number;
+    participatingTribes: number;
+  };
+  warSystemIds: number[];
+  participatingTribes: number[];
+  atMs: number;
+}
+
+interface RuntimeRefreshSnapshot {
+  warId: number;
+  enabled: boolean;
+  resolved: boolean;
+  endedAtMs: number | null;
+  winMargin: number;
+  effectiveTickMinutes: number;
+  configCounts: {
+    warConfigIds: number;
+    phaseConfigIds: number;
+    systemConfigIds: number;
+    warSystemIds: number;
+  };
+  warSystemIds: number[];
+  atMs: number;
+}
+
+interface RuntimePhaseSnapshot {
+  atMs: number;
+  warConfigDefaultTickMinutes: number;
+  phaseId: number | null;
+  displayName: string | null;
+  effectiveFromMs: number | null;
+  effectiveUntilMs: number | null;
+  tickMinutesOverride: number | null;
+  activeSystemIds: number[];
+}
+
+interface RuntimeTickPlanSnapshot {
+  atMs: number;
+  tickStartMs: number;
+  historicalTickCount: number;
+  currentBoundaryMs: number;
+  entryCount: number;
+  currentBoundaryEntryCount: number;
+  uniqueSystemIds: number[];
+  currentBoundarySystemIds: number[];
+  sampleEntries: Array<{ tickTimestampMs: number; systemId: number }>;
+}
+
+interface RuntimeDiagnostics {
+  configured: {
+    packageId: string | null;
+    packageIdLooksValid: boolean;
+    rpcUrl: string | null;
+    graphqlUrl: string | null;
+    warIdOverride: number | null;
+    outputPath: string | null;
+  };
+  lastDiscoveryError: RuntimeDiscoveryError | null;
+  latestPublishedArtifact: PublishedArtifactSummary | null;
+  lastDiscoveredWar: RuntimeWarSnapshot | null;
+  lastRefreshState: RuntimeRefreshSnapshot | null;
+  lastActivePhase: RuntimePhaseSnapshot | null;
+  lastTickPlan: RuntimeTickPlanSnapshot | null;
 }
 
 interface TickRunOutcome {
@@ -66,6 +161,22 @@ const runtimeStatus: RuntimeStatus = {
   tickRateMinutes: 60,
   lastTickMs: null,
   nextTickMs: null,
+};
+const runtimeDiagnostics: RuntimeDiagnostics = {
+  configured: {
+    packageId: null,
+    packageIdLooksValid: false,
+    rpcUrl: null,
+    graphqlUrl: null,
+    warIdOverride: null,
+    outputPath: null,
+  },
+  lastDiscoveryError: null,
+  latestPublishedArtifact: null,
+  lastDiscoveredWar: null,
+  lastRefreshState: null,
+  lastActivePhase: null,
+  lastTickPlan: null,
 };
 
 function envString(name: string, fallback: string): string {
@@ -103,6 +214,119 @@ function formatDuration(ms: number): string {
 
 function defaultRuntimeOutputPath(): string {
   return path.resolve(process.cwd(), "runtime/verifier/latest.json");
+}
+
+function looksLikePackageId(value: string | null | undefined): boolean {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function setLastDiscoveryError(stage: string, error: unknown): void {
+  runtimeDiagnostics.lastDiscoveryError = {
+    stage,
+    message: errorMessage(error),
+    atMs: Date.now(),
+  };
+}
+
+function clearLastDiscoveryError(): void {
+  runtimeDiagnostics.lastDiscoveryError = null;
+}
+
+function summarizeDiscoveredWar(discovered: DiscoveredWarConfig): RuntimeWarSnapshot {
+  return {
+    warId: discovered.warId,
+    warRegistryId: discovered.warRegistryId,
+    warDisplayName: discovered.warDisplayName,
+    warEnabled: discovered.warEnabled,
+    warResolved: discovered.warResolved,
+    defaultTickMinutes: discovered.defaultTickMinutes,
+    configCounts: {
+      warConfigIds: discovered.warConfigIds.length,
+      phaseConfigIds: discovered.phaseConfigIds.length,
+      systemConfigIds: discovered.systemConfigIds.length,
+      warSystemIds: discovered.warSystemIds.length,
+      participatingTribes: discovered.participatingTribeIds.length,
+    },
+    warSystemIds: [...discovered.warSystemIds],
+    participatingTribes: [...discovered.participatingTribeIds],
+    atMs: Date.now(),
+  };
+}
+
+function summarizeRefreshState(
+  warId: number,
+  freshState: Awaited<ReturnType<typeof refreshWarState>>,
+): RuntimeRefreshSnapshot {
+  return {
+    warId,
+    enabled: freshState.enabled,
+    resolved: freshState.resolved,
+    endedAtMs: freshState.endedAtMs,
+    winMargin: freshState.winMargin,
+    effectiveTickMinutes: freshState.effectiveTickMinutes,
+    configCounts: {
+      warConfigIds: freshState.warConfigIds.length,
+      phaseConfigIds: freshState.phaseConfigIds.length,
+      systemConfigIds: freshState.systemConfigIds.length,
+      warSystemIds: freshState.warSystemIds.length,
+    },
+    warSystemIds: [...freshState.warSystemIds],
+    atMs: Date.now(),
+  };
+}
+
+function readPublishedArtifactSummary(outputPath: string): PublishedArtifactSummary {
+  const base: PublishedArtifactSummary = {
+    path: outputPath,
+    exists: false,
+    updatedAtMs: null,
+    warId: null,
+    tickCount: null,
+    lastTickMs: null,
+    tickStatus: null,
+    systemCount: null,
+    error: null,
+  };
+
+  if (!existsSync(outputPath)) {
+    return base;
+  }
+
+  base.exists = true;
+  base.updatedAtMs = statSync(outputPath).mtimeMs;
+
+  try {
+    const parsed = JSON.parse(readFileSync(outputPath, "utf8")) as {
+      config?: { warId?: unknown; tickCount?: unknown; tickStatus?: unknown };
+      scoreboard?: { lastTickMs?: unknown; systems?: unknown[] };
+      tickStatus?: unknown;
+    };
+    const rawConfig = parsed.config ?? {};
+    const rawScoreboard = parsed.scoreboard ?? {};
+    const warId = Number(rawConfig.warId);
+    const tickCount = Number(rawConfig.tickCount);
+    const lastTickMs = Number(rawScoreboard.lastTickMs);
+    const rawTickStatus = rawConfig.tickStatus ?? parsed.tickStatus;
+    base.warId = Number.isFinite(warId) ? warId : null;
+    base.tickCount = Number.isFinite(tickCount) ? tickCount : null;
+    base.lastTickMs = Number.isFinite(lastTickMs) ? lastTickMs : null;
+    base.tickStatus = rawTickStatus === "live_resolved" || rawTickStatus === "degraded_frozen"
+      ? rawTickStatus
+      : null;
+    base.systemCount = Array.isArray(rawScoreboard.systems) ? rawScoreboard.systems.length : 0;
+  } catch (error) {
+    base.error = errorMessage(error);
+  }
+
+  return base;
+}
+
+function refreshPublishedArtifactSummary(outputPath: string): void {
+  runtimeDiagnostics.latestPublishedArtifact = readPublishedArtifactSummary(outputPath);
 }
 
 function currentNotifyHint(): NotifyHint | null {
@@ -417,6 +641,23 @@ async function runTick(
   config.tickCount = historicalTickCount;
 
   const dataSource = new RegistryBackedVerifierDataSource(config);
+  const currentWarConfig = await dataSource.getWarConfigAt(now);
+  const currentPhase = await dataSource.getActivePhaseAt(now);
+  runtimeDiagnostics.lastActivePhase = {
+    atMs: now,
+    warConfigDefaultTickMinutes: currentWarConfig.defaultTickMinutes,
+    phaseId: currentPhase?.phaseId ?? null,
+    displayName: currentPhase?.displayName ?? null,
+    effectiveFromMs: currentPhase?.effectiveFromMs ?? null,
+    effectiveUntilMs: currentPhase?.effectiveUntilMs ?? null,
+    tickMinutesOverride: currentPhase?.tickMinutesOverride ?? null,
+    activeSystemIds: currentPhase?.activeSystemIds ? [...currentPhase.activeSystemIds] : [],
+  };
+  console.log(
+    `  Active phase: ${currentPhase ? `${currentPhase.displayName} (#${currentPhase.phaseId})` : "none"} | `
+    + `phase systems: ${currentPhase?.activeSystemIds.length ?? 0} | `
+    + `effective tick: ${(currentPhase?.tickMinutesOverride ?? currentWarConfig.defaultTickMinutes)}m`,
+  );
 
   if (config.chain.locationQueryMode !== "off") {
     const added = await dataSource.refreshLocationMappingsFromEvents();
@@ -442,6 +683,28 @@ async function runTick(
   };
 
   const tickPlan = await buildTickPlan(dataSource, tickStartMs, historicalTickCount, warEndMs);
+  const currentBoundaryEntries = tickPlan.filter((entry) => entry.tickTimestampMs === currentTickBoundary);
+  const uniqueSystemIds = [...new Set(tickPlan.map((entry) => entry.systemId))].sort((a, b) => a - b);
+  const currentBoundarySystemIds = [...new Set(currentBoundaryEntries.map((entry) => entry.systemId))].sort((a, b) => a - b);
+  runtimeDiagnostics.lastTickPlan = {
+    atMs: Date.now(),
+    tickStartMs,
+    historicalTickCount,
+    currentBoundaryMs: currentTickBoundary,
+    entryCount: tickPlan.length,
+    currentBoundaryEntryCount: currentBoundaryEntries.length,
+    uniqueSystemIds,
+    currentBoundarySystemIds,
+    sampleEntries: tickPlan.slice(0, 8).map((entry) => ({
+      tickTimestampMs: entry.tickTimestampMs,
+      systemId: entry.systemId,
+    })),
+  };
+  console.log(
+    `  Tick plan: ${tickPlan.length} entries total | `
+    + `${currentBoundaryEntries.length} for current boundary | `
+    + `systems: ${currentBoundarySystemIds.length > 0 ? currentBoundarySystemIds.join(", ") : "none"}`,
+  );
   const systemDisplayConfigs = loadSystemDisplayConfigs(
     config.systemDisplayConfigPath,
     process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
@@ -615,6 +878,7 @@ async function runTick(
   };
 
   await writeVerifierArtifacts(outputPath, envelope, "live-chain", auditInputs, resolved);
+  refreshPublishedArtifactSummary(outputPath);
 
   // Log latest tick results
   const latestTickMs = currentTickBoundary;
@@ -675,6 +939,8 @@ async function runWarLoop(
   console.log(`  Win margin: ${discovered.winMargin}`);
   console.log(`  Output: ${outputPath}`);
   console.log("");
+  runtimeDiagnostics.lastDiscoveredWar = summarizeDiscoveredWar(discovered);
+  clearLastDiscoveryError();
 
   if (discovered.warResolved) {
     if (warIdOverride != null) {
@@ -720,6 +986,7 @@ async function runWarLoop(
 
   // Write initial scoreboard immediately so the frontend has fresh war data
   await writeBootstrapScoreboard(discovered, outputPath, currentTickMinutes);
+  refreshPublishedArtifactSummary(outputPath);
   console.log(`Wrote initial scoreboard for War ${discovered.warId} to ${outputPath}`);
   runtimeStatus.lastTickMs = null;
 
@@ -762,6 +1029,7 @@ async function runWarLoop(
 
     timer = setTimeout(() => {
       void cycle().catch((err) => {
+        setLastDiscoveryError("scheduled_tick_cycle", err);
         console.error("Tick cycle failed:", err);
         scheduleNext();
       });
@@ -771,6 +1039,7 @@ async function runWarLoop(
       if (timer) clearTimeout(timer);
       console.log(`\n[${new Date().toISOString()}] /notify received — running immediate refresh cycle...`);
       void cycle().catch((err) => {
+        setLastDiscoveryError("notify_refresh_cycle", err);
         console.error("Refresh cycle failed:", err);
         scheduleNext();
       });
@@ -797,6 +1066,7 @@ async function runWarLoop(
           return;
         }
       } catch (error) {
+        setLastDiscoveryError("notify_handoff", error);
         console.error(`  Notify-hinted war handoff failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
@@ -810,11 +1080,19 @@ async function runWarLoop(
       warConfigIds: discovered.warConfigIds,
       phaseConfigIds: discovered.phaseConfigIds,
     });
+    runtimeDiagnostics.lastRefreshState = summarizeRefreshState(discovered.warId, freshState);
+    console.log(
+      `  Refresh state: enabled=${freshState.enabled} resolved=${freshState.resolved} `
+      + `tick=${freshState.effectiveTickMinutes}m configs=${freshState.systemConfigIds.length} `
+      + `warSystems=${freshState.warSystemIds.length}`,
+    );
     const rediscovered = await discoverWarConfig({
       packageId,
       rpcUrl,
       warId: discovered.warId,
     });
+    runtimeDiagnostics.lastDiscoveredWar = summarizeDiscoveredWar(rediscovered);
+    clearLastDiscoveryError();
     discovered.warConfigIds = rediscovered.warConfigIds;
     discovered.phaseConfigIds = rediscovered.phaseConfigIds;
     discovered.systemConfigIds = rediscovered.systemConfigIds;
@@ -1035,6 +1313,7 @@ async function runWarLoop(
       console.log(`War is paused. Polling again in ${formatDuration(PAUSED_POLL_MS)}...`);
       timer = setTimeout(() => {
         void cycle().catch((err) => {
+          setLastDiscoveryError("paused_poll_cycle", err);
           console.error("Paused-poll cycle failed:", err);
           timer = setTimeout(() => void cycle(), PAUSED_POLL_MS);
         });
@@ -1070,6 +1349,7 @@ async function runWarLoop(
 
     if (!readyToScore) {
       await writeBootstrapScoreboard(discovered, outputPath, currentTickMinutes);
+      refreshPublishedArtifactSummary(outputPath);
       runtimeStatus.state = "waiting";
       runtimeStatus.tickRateMinutes = currentTickMinutes;
       runtimeStatus.lastTickMs = null;
@@ -1078,6 +1358,7 @@ async function runWarLoop(
       console.log("  Still waiting for configs to be published. Polling again in 1m...");
       timer = setTimeout(() => {
         void cycle().catch((err) => {
+          setLastDiscoveryError("config_wait_cycle", err);
           console.error("Poll cycle failed:", err);
           scheduleNext();
         });
@@ -1308,6 +1589,8 @@ async function pollForNextWar(
 
     try {
       const discovered = await discoverPreferredWar(packageId, rpcUrl, currentNotifyHint()?.warId ?? null);
+      runtimeDiagnostics.lastDiscoveredWar = summarizeDiscoveredWar(discovered);
+      clearLastDiscoveryError();
 
       if (!discovered.warResolved) {
         console.log(`\nFound unresolved War ${discovered.warId}. Starting verifier loop...`);
@@ -1316,6 +1599,7 @@ async function pollForNextWar(
         return;
       }
     } catch (err) {
+      setLastDiscoveryError("poll_for_next_war", err);
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("No unresolved war found")) {
         console.log("  No unresolved wars found. Will retry...");
@@ -1341,6 +1625,22 @@ async function main(): Promise<void> {
   const outputPath = process.env.LINEAGE_OUTPUT_PATH
     || defaultRuntimeOutputPath();
   const maxHistory = envNumber("LINEAGE_MAX_HISTORY_TICKS", MAX_CATCHUP_TICKS);
+  runtimeDiagnostics.configured = {
+    packageId,
+    packageIdLooksValid: looksLikePackageId(packageId),
+    rpcUrl,
+    graphqlUrl,
+    warIdOverride: Number.isFinite(warIdOverride) ? warIdOverride : null,
+    outputPath,
+  };
+  refreshPublishedArtifactSummary(outputPath);
+  console.log(
+    `[verifier] Config package=${packageId} valid=${runtimeDiagnostics.configured.packageIdLooksValid} `
+    + `rpc=${rpcUrl} graphql=${graphqlUrl ?? "off"} output=${outputPath}`,
+  );
+  if (!runtimeDiagnostics.configured.packageIdLooksValid) {
+    console.warn(`[verifier] LINEAGE_PACKAGE_ID does not look like a 32-byte object id: ${packageId}`);
+  }
 
   ensureSignalHandlers();
 
@@ -1353,6 +1653,7 @@ async function main(): Promise<void> {
       nextTickMs: runtimeStatus.nextTickMs,
       now: Date.now(),
       notifyHint: currentNotifyHint(),
+      diagnostics: runtimeDiagnostics,
     }), path.dirname(outputPath));
   }
 
@@ -1367,6 +1668,8 @@ async function main(): Promise<void> {
       })
       : await discoverPreferredWar(packageId, rpcUrl, currentNotifyHint()?.warId ?? null);
 
+    runtimeDiagnostics.lastDiscoveredWar = summarizeDiscoveredWar(discovered);
+    clearLastDiscoveryError();
     runtimeStatus.warId = discovered.warId;
     runtimeStatus.tickRateMinutes = discovered.defaultTickMinutes;
     runtimeStatus.state = "running";
@@ -1374,6 +1677,7 @@ async function main(): Promise<void> {
 
     await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once, warIdOverride);
   } catch (err) {
+    setLastDiscoveryError("main_startup", err);
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("No unresolved war found") && warIdOverride == null) {
       console.log("No unresolved wars found on chain.");
