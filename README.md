@@ -50,7 +50,7 @@ The on-chain contracts and verifier support N tribes and long-running wars. We'd
 
 **Multi-tribe scoreboard** — The scoreboard frontend is currently designed for 2-tribe wars. The contracts and verifier handle N tribes. The frontend needs work for 3+ tribes: color assignment, layout scaling, chart readability. Good first contribution.
 
-**GraphQL batch optimization** — After long verifier downtime (days), catch-up resolves all missed ticks at once, generating thousands of GraphQL calls with no rate-limit backoff. A batching/throttling layer for the GraphQL ownership pipeline would make long-war recovery more resilient.
+**GraphQL degraded mode** — The verifier retries GraphQL ownership resolution up to five times with backoff. If GraphQL still fails, it freezes the whole tick by carrying forward the last resolved state and persists that tick as degraded. This is intentional behavior; degraded ticks are not automatically rewritten later when GraphQL recovers.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup and guidelines.
 

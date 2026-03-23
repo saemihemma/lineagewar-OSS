@@ -56,7 +56,7 @@ Admin Panel (React) ──wallet txs──> Sui Blockchain
 
 1. **Cumulative Scoring** — Scores never recalculate. Phase 2 adds to Phase 1's totals. Ledger is append-only.
 2. **Event-Driven Discovery** — Verifier discovers everything from chain events. Zero manual config besides env vars.
-3. **Ledger Immutability** — PostgreSQL is authoritative history. `ON CONFLICT DO NOTHING` ensures crash-safe idempotency.
+3. **Ledger Durability** — PostgreSQL is authoritative history. Upsert semantics keep one durable row per tick key, including recomputed current ticks and degraded carry-forward ticks.
 4. **Atomic Outputs** — `latest.json` written via tmp+rename [artifact-output.ts::atomicWriteFile()]. Scoreboard never reads a partial file.
 5. **Phase Additivity** — New phases add systems or change tick rates. Removed systems stop scoring but keep history.
 6. **Source Priority** — Deployed contract > this document > local Move source.
@@ -172,7 +172,7 @@ Every tick boundary (15/30/60 minutes):
    c. `evaluateAssembly()` — filter by family, type, storage rules
    d. `buildPresenceRows()` — group qualifying assemblies by tribe, sum weighted presence
    e. `resolveSystem()` — determine NEUTRAL / CONTESTED / CONTROLLED + award points
-7. `commitTicks()` [tick-ledger.ts] — INSERT to PostgreSQL (`ON CONFLICT DO NOTHING`)
+7. `commitTicks()` [tick-ledger.ts] — upsert to PostgreSQL so current-tick recomputations and degraded carry-forward ticks persist durably
 8. `buildScoreboardPayload()` [frontend-output.ts] — cumulative scores, chart data
 9. `writeVerifierArtifacts()` [artifact-output.ts] — atomic write latest.json + audit artifacts
 
@@ -210,7 +210,7 @@ Every tick boundary (15/30/60 minutes):
 2. **OwnerCap objects** → wallet address (AddressOwner)
 3. **Character objects** at wallet → `tribe_id`
 
-On GraphQL failure: assembly excluded from scoring (tick still resolves with fewer assemblies). Cascading failures degrade assembly inclusion rate.
+The verifier retries GraphQL ownership resolution up to five times with bounded backoff. If GraphQL is still unavailable, it freezes the entire tick and persists a degraded result: each system carries forward the last resolved snapshot state, and if no prior resolved state exists the verifier emits an explicit degraded placeholder with no points. Published artifacts mark these ticks with `tickStatus = "degraded_frozen"` plus `degradedReason` and `carriedForwardFromTickMs` when applicable. Degraded historical ticks are not automatically rewritten later.
 
 **Tribe filtering:** After ownership resolution, `TribeResolver` checks each assembly's tribe against `participatingTribeIds` (discovered from `TribeRegisteredEvent`). Non-registered tribes return `null` → assembly excluded from presence rows → cannot influence scoring. [tribe-resolver.ts:74]
 
@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS committed_ticks_v2 (
 );
 ```
 
-`ON CONFLICT DO NOTHING` — safe for crash recovery. Restart re-resolves current tick; duplicates silently ignored.
+`INSERT ... ON CONFLICT DO UPDATE` keeps one durable row per `(war_id, system_id, tick_timestamp_ms)`. Restart re-resolution can correct the current tick in place, and degraded carry-forward ticks are persisted just like live-resolved ticks.
 
 ---
 
@@ -327,12 +327,12 @@ Single Railway service: the verifier process. Serves admin panel + scoreboard as
 
 | Scenario | What Happens | Recovery |
 |----------|-------------|---------|
-| Verifier crashes mid-tick | Uncommitted ticks lost. On restart, re-resolves from ledger + live. `ON CONFLICT DO NOTHING` prevents duplicates. | Automatic on restart |
-| GraphQL down | Assemblies can't resolve ownership → excluded from scoring. Tick still resolves with fewer assemblies. | Ticks self-heal when GraphQL returns |
+| Verifier crashes mid-tick | Uncommitted ticks lost. On restart, the verifier re-resolves from ledger + live state. Ledger upserts keep current-tick corrections durable instead of dropping them. | Automatic on restart |
+| GraphQL down | Ownership resolution retries up to five times with backoff. If GraphQL still fails, the whole tick is frozen and persisted as degraded by carrying forward the last resolved state per system; if no prior state exists, the verifier emits an explicit degraded placeholder with no points. | Future ticks retry live resolution automatically, but degraded historical ticks stay as recorded unless rewritten manually |
 | JSON-RPC down | War discovery fails, `refreshWarState` fails. Resolution retries 3× with backoff; if all fail, war continues and retries next cycle. War never stops due to resolution failure. | Automatic retry every cycle until success |
 | PostgreSQL down | `commitTicks()` throws. Tick results lost. Verifier crashes. | Restart after DB recovery; ticks re-resolved |
 | Admin publishes bad config | Verifier picks up new config on next cycle. Historical scores preserved. | Publish corrected config |
-| Two verifier instances | Both resolve same ticks. `ON CONFLICT DO NOTHING` prevents ledger corruption. Both write `latest.json` — last write wins. | Run single instance only |
+| Two verifier instances | Both resolve the same ticks. The ledger keeps one row per tick key via upsert, and `latest.json` remains last-write-wins. | Run single instance only |
 
 ### Quick Diagnostics
 

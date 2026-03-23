@@ -97,6 +97,18 @@ Each verifier run writes a public audit tree:
 
 Use `npm run verify:audit` to compare published artifacts against on-chain snapshot records.
 
+## GraphQL degraded mode
+
+The verifier retries GraphQL ownership resolution up to five times with backoff before treating a tick as degraded.
+
+- If GraphQL recovers within those retries, the tick resolves normally.
+- If GraphQL is still unavailable, the verifier freezes the entire tick and carries forward the last resolved snapshot state for each affected system.
+- If a system has no prior resolved state, the verifier emits an explicit degraded placeholder with no points.
+- Published artifacts mark degraded ticks with `tickStatus: "degraded_frozen"` and include `degradedReason` plus `carriedForwardFromTickMs` when applicable.
+- Degraded historical ticks are not automatically rewritten later; any history rewrite is an explicit manual operation.
+
+See [LIVE_OPS_RUNBOOK.md](./LIVE_OPS_RUNBOOK.md) for the operational degraded-mode runbook.
+
 ## Location event collector
 
 Collects `LocationRevealedEvent` records and produces assembly→system mappings.

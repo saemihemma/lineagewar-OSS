@@ -16,8 +16,6 @@ You'll need a Sui testnet wallet and a deployed `lineage_war` package. See the a
 
 **Multi-tribe scoreboard** — The frontend is designed for 2 tribes. Contracts and verifier handle N. The scoreboard needs color assignment, layout scaling, and chart readability for 3+ tribes.
 
-**GraphQL batch optimization** — After long verifier downtime, catch-up generates thousands of GraphQL calls with no rate-limit backoff. A throttling layer would improve resilience.
-
 **Move contract tests** — Test modules for the core flows (create war, register tribes, resolve) would strengthen confidence.
 
 ## Code Style
