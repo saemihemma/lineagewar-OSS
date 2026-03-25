@@ -76,18 +76,17 @@ export default function TerminalHeader({
         alignItems: "center",
         justifyContent: "space-between",
         flexWrap: "wrap",
-        gap: "0.65rem",
-        padding: "0.8rem 1.25rem",
+        gap: "0.9rem",
+        padding: "0.95rem 1.25rem",
         borderBottom: "1px solid var(--border-panel)",
-        background: "rgba(6, 17, 12, 0.9)",
-        backdropFilter: "blur(2px)",
+        background: "var(--bg-panel)",
         position: "sticky",
         top: 0,
         zIndex: 100,
       }}
     >
       {/* Left: title + meta */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap", flex: "1 1 24rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
           <h1
             style={{
@@ -126,7 +125,7 @@ export default function TerminalHeader({
       </div>
 
       {/* Right slot */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
         {statusPosition === "right" ? statusBadge : null}
         {right}
       </div>

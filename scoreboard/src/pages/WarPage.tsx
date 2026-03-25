@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -53,30 +53,24 @@ const panelVariants = {
   }),
 };
 
-const actionLinkStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0.45rem 0.7rem",
-  border: "1px solid var(--border-panel)",
-  textDecoration: "none",
-  fontFamily: "IBM Plex Mono",
-  fontSize: "0.62rem",
-  letterSpacing: "0.12em",
-  whiteSpace: "nowrap",
-  minHeight: 30,
-};
+function renderExternalHeaderAction(label: string, href: string, variantClassName: string) {
+  const className = href
+    ? `terminal-header-action ${variantClassName}`
+    : `terminal-header-action ${variantClassName} terminal-header-action--disabled`;
 
-function renderHeaderAction(label: string, href: string, style: CSSProperties) {
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" style={style}>
+      <a href={href} target="_blank" rel="noreferrer" className={className}>
         {label}
       </a>
     );
   }
 
-  return <span style={style}>{label}</span>;
+  return (
+    <span className={className} aria-disabled="true">
+      {label}
+    </span>
+  );
 }
 
 export type WarDataMode = "live" | "simulation";
@@ -221,27 +215,18 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
   );
 
   const headerRight = useVerifier ? (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
-      {renderHeaderAction("PREDICTION MARKET", PREDICTION_MARKET_URL, {
-        ...actionLinkStyle,
-        color: "var(--mint)",
-        borderColor: "rgba(160, 230, 220, 0.45)",
-        boxShadow: "inset 0 0 0 1px rgba(160, 230, 220, 0.12)",
-      })}
-      {renderHeaderAction("AIRDROP", AIRDROP_URL, {
-        ...actionLinkStyle,
-        color: "var(--yellow-dim)",
-        borderColor: "rgba(242, 201, 76, 0.55)",
-        boxShadow: "inset 0 0 0 1px rgba(242, 201, 76, 0.12)",
-      })}
+    <div className="terminal-header-actions">
+      {renderExternalHeaderAction(
+        "PREDICTION MARKET",
+        PREDICTION_MARKET_URL,
+        "terminal-header-action--mint",
+      )}
+      {renderExternalHeaderAction("AIRDROP", AIRDROP_URL, "terminal-header-action--orange")}
       <Link
         to="/audit"
-        style={{
-          ...actionLinkStyle,
-          color: "var(--text-dim)",
-        }}
+        className="terminal-header-action terminal-header-action--mint-primary"
       >
-        VIEW AUDIT →
+        VIEW AUDIT
       </Link>
     </div>
   ) : undefined;
