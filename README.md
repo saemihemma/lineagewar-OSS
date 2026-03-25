@@ -44,6 +44,17 @@ cd admin && npm install && npm run dev
 cd scoreboard && npm install && npm run dev
 ```
 
+## Deployment Notes
+
+The scoreboard reads `VITE_PREDICTION_MARKET_URL` and `VITE_AIRDROP_URL` at build time for the top-header external links. On Railway, set:
+
+```bash
+VITE_PREDICTION_MARKET_URL=https://orchestrator.lineagewar.xyz
+VITE_AIRDROP_URL=https://orchestrator.lineagewar.xyz/airdrop
+```
+
+Because they are Vite build-time variables, changing them requires a rebuild/redeploy before the live scoreboard bundle updates.
+
 ## Contributions Welcome
 
 The on-chain contracts and verifier support N tribes and long-running wars. We'd love collaboration on:

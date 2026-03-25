@@ -20,6 +20,7 @@ import {
   MOCK_PHASE,
 } from "../data/mock";
 import {
+  AIRDROP_URL,
   LIVE_VERIFIER_POLL_INTERVAL_MS,
   LIVE_VERIFIER_SNAPSHOT_URL,
   PREDICTION_MARKET_URL,
@@ -65,6 +66,18 @@ const actionLinkStyle: CSSProperties = {
   whiteSpace: "nowrap",
   minHeight: 30,
 };
+
+function renderHeaderAction(label: string, href: string, style: CSSProperties) {
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" style={style}>
+        {label}
+      </a>
+    );
+  }
+
+  return <span style={style}>{label}</span>;
+}
 
 export type WarDataMode = "live" | "simulation";
 
@@ -197,32 +210,18 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
 
   const headerRight = useVerifier ? (
     <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
-      {PREDICTION_MARKET_URL ? (
-        <a
-          href={PREDICTION_MARKET_URL}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            ...actionLinkStyle,
-            color: "var(--mint)",
-            borderColor: "rgba(160, 230, 220, 0.45)",
-            boxShadow: "inset 0 0 0 1px rgba(160, 230, 220, 0.12)",
-          }}
-        >
-          PREDICTION MARKET
-        </a>
-      ) : (
-        <span
-          style={{
-            ...actionLinkStyle,
-            color: "var(--mint)",
-            borderColor: "rgba(160, 230, 220, 0.45)",
-            boxShadow: "inset 0 0 0 1px rgba(160, 230, 220, 0.12)",
-          }}
-        >
-          PREDICTION MARKET
-        </span>
-      )}
+      {renderHeaderAction("PREDICTION MARKET", PREDICTION_MARKET_URL, {
+        ...actionLinkStyle,
+        color: "var(--mint)",
+        borderColor: "rgba(160, 230, 220, 0.45)",
+        boxShadow: "inset 0 0 0 1px rgba(160, 230, 220, 0.12)",
+      })}
+      {renderHeaderAction("AIRDROP", AIRDROP_URL, {
+        ...actionLinkStyle,
+        color: "var(--yellow-dim)",
+        borderColor: "rgba(242, 201, 76, 0.55)",
+        boxShadow: "inset 0 0 0 1px rgba(242, 201, 76, 0.12)",
+      })}
       <Link
         to="/audit"
         style={{
