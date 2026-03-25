@@ -158,6 +158,37 @@ export interface VerifierAuditSummary {
   inputs: VerifierAuditInputSummary;
 }
 
+export interface VerifierResolutionScoreEntry {
+  tribeId: number;
+  name: string;
+  points: number;
+}
+
+export interface VerifierPendingResolution {
+  status: "pending" | "retrying";
+  finalScores: VerifierResolutionScoreEntry[];
+  warEndedAtMs: number | null;
+  winMargin: number;
+  actualMargin: number;
+  isDraw: boolean;
+  attemptedAtMs: number;
+  lastAttemptMs?: number;
+  message?: string;
+}
+
+export interface VerifierResolution {
+  warResolutionObjectId: string | null;
+  transactionDigest: string;
+  winner: VerifierResolutionScoreEntry | null;
+  runnerUp: VerifierResolutionScoreEntry | null;
+  allScores: VerifierResolutionScoreEntry[];
+  isDraw: boolean;
+  winMargin: number;
+  actualMargin: number;
+  endedAtMs: number | null;
+  resolvedAtMs: number;
+}
+
 export interface VerifierEnvelopeConfig {
   source?: string;
   warId?: number;
@@ -182,6 +213,8 @@ export interface VerifierScoreboardEnvelope {
   degradedReason?: string | null;
   carriedForwardFromTickMs?: number | null;
   config?: VerifierEnvelopeConfig;
+  pending_resolution?: VerifierPendingResolution | null;
+  resolution?: VerifierResolution | null;
   tickPlan?: VerifierTickPlanEntry[];
   commitments?: VerifierSnapshotCommitment[];
   snapshots?: VerifierSnapshot[];

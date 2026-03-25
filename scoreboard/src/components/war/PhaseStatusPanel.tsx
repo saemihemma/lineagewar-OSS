@@ -18,6 +18,8 @@ interface PhaseStatusPanelProps {
   phaseEndMs?: number;
   /** Next phase start timestamp — preferred boundary when the next phase is known */
   nextPhaseStartMs?: number;
+  warEndMs?: number;
+  warLifecycle?: "running" | "ended_pending_resolution" | "resolved";
 }
 
 function formatTimestamp(ms: number | null): string {
@@ -65,6 +67,8 @@ export default function PhaseStatusPanel({
   phaseStartMs,
   phaseEndMs,
   nextPhaseStartMs,
+  warEndMs,
+  warLifecycle = "running",
 }: PhaseStatusPanelProps) {
   const renderedPhaseLabel = phase
     ? formatPhaseLabel(phase)
@@ -72,9 +76,21 @@ export default function PhaseStatusPanel({
       ? phaseLabel.toUpperCase()
       : "PHASE WAITING";
 
-  const elapsed = phaseStartMs !== undefined ? formatDuration(Date.now() - phaseStartMs) : "UNKNOWN";
+  const nowMs = Date.now();
+  const isEnded = warLifecycle !== "running";
+  const elapsedEndMs = isEnded && warEndMs !== undefined ? warEndMs : nowMs;
+  const elapsed = phaseStartMs !== undefined ? formatDuration(Math.max(0, elapsedEndMs - phaseStartMs)) : "UNKNOWN";
   const nextBoundaryMs = nextPhaseStartMs ?? phaseEndMs;
-  const remaining = nextBoundaryMs !== undefined ? formatDuration(nextBoundaryMs - Date.now()) : "WITHHELD";
+  const remaining = isEnded
+    ? "WAR ENDED"
+    : nextBoundaryMs !== undefined
+      ? formatDuration(nextBoundaryMs - nowMs)
+      : "WITHHELD";
+  const remainingColor = isEnded
+    ? "var(--yellow-dim)"
+    : remaining === "WITHHELD"
+      ? "var(--text-dim)"
+      : "var(--text-muted)";
 
   return (
     <div>
@@ -100,7 +116,7 @@ export default function PhaseStatusPanel({
         <StatRow
           label="TIME TO NEXT PHASE"
           value={remaining}
-          valueColor={remaining === "WITHHELD" ? "var(--text-dim)" : "var(--text-muted)"}
+          valueColor={remainingColor}
         />
         {tickRateMinutes !== undefined && (
           <StatRow

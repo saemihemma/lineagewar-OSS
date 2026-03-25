@@ -18,7 +18,7 @@ interface TerminalHeaderProps {
 const statusColor: Record<string, string> = {
   ACTIVE: "var(--mint)",
   PAUSED: "var(--yellow)",
-  ENDED: "var(--text-dim)",
+  ENDED: "var(--yellow-dim)",
   STANDBY: "var(--neutral-state)",
   DEGRADED: "var(--yellow-dim)",
 };

@@ -56,7 +56,7 @@ export default function DebugScreen() {
   const ownedAdminCaps = useOwnedAdminCaps();
 
   const [endWarPreset, setEndWarPreset] = useState<number | null>(null);
-  const [endWarCustom, setEndWarCustom] = useState(toDateTimeLocalValue(Date.now() + 24 * 60 * 60_000));
+  const [endWarCustom, setEndWarCustom] = useState(toDateTimeLocalValue(Date.now()));
   const [endWarConfirmed, setEndWarConfirmed] = useState(false);
   const [cancelEndConfirmed, setCancelEndConfirmed] = useState(false);
 

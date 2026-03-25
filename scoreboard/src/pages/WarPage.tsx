@@ -80,6 +80,7 @@ function renderHeaderAction(label: string, href: string, style: CSSProperties) {
 }
 
 export type WarDataMode = "live" | "simulation";
+type WarLifecycle = "running" | "ended_pending_resolution" | "resolved";
 
 interface WarPageProps {
   mode?: WarDataMode;
@@ -165,6 +166,17 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
   const systemNames = useMemo(() => buildSystemNameRecord(resolvedSystemNames), [resolvedSystemNames]);
   const sourceMode = envelopeConfig?.source;
   const resolvedTickCount = useMemo(() => chartData.length, [chartData]);
+  const warEndMs =
+    asFiniteNumber(envelopeConfig?.warEndMs) ??
+    asFiniteNumber(envelope?.pending_resolution?.warEndedAtMs) ??
+    asFiniteNumber(envelope?.resolution?.endedAtMs);
+  const warLifecycle: WarLifecycle = useMock
+    ? "running"
+    : envelope?.resolution
+      ? "resolved"
+      : envelope?.pending_resolution || (warEndMs !== undefined && Date.now() >= warEndMs)
+        ? "ended_pending_resolution"
+        : "running";
 
   const phaseLabel = useMock
     ? undefined
@@ -251,7 +263,9 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
           status={
             useMock
               ? "ACTIVE"
-              : tickStatus === "degraded_frozen"
+              : warLifecycle !== "running"
+                ? "ENDED"
+                : tickStatus === "degraded_frozen"
                 ? "DEGRADED"
                 : livePayloadReady && !error
                   ? "ACTIVE"
@@ -301,7 +315,41 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
               minHeight: 0,
             }}
           >
-            {tickStatus === "degraded_frozen" && (
+            {warLifecycle === "ended_pending_resolution" && (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  padding: "0.55rem 1rem",
+                  fontFamily: "IBM Plex Mono",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.04em",
+                  color: "var(--yellow-dim)",
+                  background: "rgba(242,201,76,0.08)",
+                  borderBottom: "1px solid var(--border-panel)",
+                }}
+              >
+                WAR ENDED — FINAL RESOLUTION PENDING
+              </div>
+            )}
+
+            {warLifecycle === "resolved" && (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  padding: "0.55rem 1rem",
+                  fontFamily: "IBM Plex Mono",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.04em",
+                  color: "var(--mint)",
+                  background: "rgba(132,211,173,0.08)",
+                  borderBottom: "1px solid var(--border-panel)",
+                }}
+              >
+                WAR ENDED — FINAL RESOLUTION PUBLISHED
+              </div>
+            )}
+
+            {warLifecycle === "running" && tickStatus === "degraded_frozen" && (
               <div
                 style={{
                   gridColumn: "1 / -1",
@@ -385,6 +433,8 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
                   phaseStartMs={phaseStartMs}
                   phaseEndMs={phaseEndMs}
                   nextPhaseStartMs={nextPhaseStartMs}
+                  warEndMs={warEndMs}
+                  warLifecycle={warLifecycle}
                 />
               </TerminalPanel>
             </motion.div>
