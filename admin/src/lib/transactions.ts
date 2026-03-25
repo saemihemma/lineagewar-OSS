@@ -869,6 +869,7 @@ export function extractCreatedObjectsByType(result: unknown): {
           digest?: string;
           effects?: {
             changedObjects?: Array<{ objectId?: string; idOperation?: string }>;
+            created?: Array<{ reference?: { objectId?: string }; type?: string }>;
           };
           objectTypes?: Record<string, string>;
         };
@@ -879,6 +880,7 @@ export function extractCreatedObjectsByType(result: unknown): {
           digest?: string;
           effects?: {
             changedObjects?: Array<{ objectId?: string; idOperation?: string }>;
+            created?: Array<{ reference?: { objectId?: string }; type?: string }>;
           };
           objectTypes?: Record<string, string>;
         };
@@ -897,22 +899,38 @@ export function extractCreatedObjectsByType(result: unknown): {
     digest?: string;
     effects?: {
       changedObjects?: Array<{ objectId?: string; idOperation?: string }>;
+      created?: Array<{ reference?: { objectId?: string }; type?: string }>;
     };
     objectTypes?: Record<string, string>;
   };
 
   const createdObjectIds: string[] = [];
   const createdByType: Record<string, string[]> = {};
+  const seenObjectIds = new Set<string>();
+
+  const registerCreatedObject = (objectId: string | undefined, explicitType?: string) => {
+    if (!objectId || seenObjectIds.has(objectId)) {
+      return;
+    }
+
+    seenObjectIds.add(objectId);
+    createdObjectIds.push(objectId);
+
+    const key = explicitType ?? transaction?.objectTypes?.[objectId] ?? "unknown";
+    createdByType[key] ??= [];
+    createdByType[key].push(objectId);
+  };
 
   for (const change of transaction?.effects?.changedObjects ?? []) {
     if (change.idOperation !== "Created" || !change.objectId) {
       continue;
     }
 
-    createdObjectIds.push(change.objectId);
-    const key = transaction?.objectTypes?.[change.objectId] ?? "unknown";
-    createdByType[key] ??= [];
-    createdByType[key].push(change.objectId);
+    registerCreatedObject(change.objectId);
+  }
+
+  for (const created of transaction?.effects?.created ?? []) {
+    registerCreatedObject(created.reference?.objectId, created.type);
   }
 
   return {

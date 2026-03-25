@@ -119,35 +119,74 @@ export function useAutoRegistryId(warId: number | null): {
             id?: { txDigest?: string };
             parsedJson?: Record<string, unknown>;
           }>;
+          hasNextPage?: boolean;
+          nextCursor?: unknown;
         }>;
         core: { getTransaction: (input: unknown) => Promise<unknown> };
+        getObject: (input: unknown) => Promise<{ data?: { type?: string | null } }>;
       };
 
-      const response = await rpcClient.queryEvents({
-        query: {
-          MoveEventType: `${LINEAGE_WAR_PACKAGE_ID}::registry::WarCreatedEvent`,
-        },
-        order: "descending",
-        limit: 20,
-      });
+      let cursor: unknown = null;
 
-      for (const event of response.data ?? []) {
-        const eventWarId = Number(event.parsedJson?.war_id);
-        if (eventWarId !== warId) continue;
-
-        const txDigest = event.id?.txDigest;
-        if (!txDigest) continue;
-
-        const tx = await rpcClient.core.getTransaction({
-          digest: txDigest,
-          include: { effects: true, objectTypes: true },
+      for (let page = 0; page < 10; page += 1) {
+        const response = await rpcClient.queryEvents({
+          query: {
+            MoveEventType: `${LINEAGE_WAR_PACKAGE_ID}::registry::WarCreatedEvent`,
+          },
+          cursor,
+          order: "descending",
+          limit: 50,
         });
-        const created = extractCreatedObjectsByType(tx);
-        const registryObjectId = Object.entries(created.createdByType).find(
-          ([type]) => type.includes("::registry::WarRegistry"),
-        )?.[1]?.[0] ?? null;
 
-        if (registryObjectId) return registryObjectId;
+        for (const event of response.data ?? []) {
+          const eventWarId = Number(event.parsedJson?.war_id);
+          if (eventWarId !== warId) continue;
+
+          const txDigest = event.id?.txDigest;
+          if (!txDigest) continue;
+
+          const tx = await rpcClient.core.getTransaction({
+            digest: txDigest,
+            include: { effects: true, objectTypes: true },
+          });
+          const created = extractCreatedObjectsByType(tx);
+
+          const typedRegistryObjectId = Object.entries(created.createdByType).find(
+            ([type]) => type.includes("::registry::WarRegistry"),
+          )?.[1]?.[0] ?? null;
+          if (typedRegistryObjectId) {
+            return typedRegistryObjectId;
+          }
+
+          if (created.createdObjectIds.length === 0) {
+            continue;
+          }
+
+          const createdObjects = await Promise.all(
+            created.createdObjectIds.map(async (objectId) => {
+              const object = await rpcClient.getObject({
+                id: objectId,
+                options: { showType: true },
+              });
+              return {
+                objectId,
+                type: object.data?.type ?? null,
+              };
+            }),
+          );
+
+          const fetchedRegistryObjectId =
+            createdObjects.find((object) => object.type?.includes("::registry::WarRegistry"))?.objectId ?? null;
+          if (fetchedRegistryObjectId) {
+            return fetchedRegistryObjectId;
+          }
+        }
+
+        if (!response.hasNextPage || !response.nextCursor) {
+          break;
+        }
+
+        cursor = response.nextCursor;
       }
 
       return null;
