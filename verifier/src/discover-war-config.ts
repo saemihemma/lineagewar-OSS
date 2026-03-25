@@ -38,6 +38,7 @@ export interface DiscoveredWarConfig {
 interface EventEntry {
   id?: { txDigest?: string };
   parsedJson?: Record<string, unknown>;
+  timestampMs?: string | null;
 }
 
 interface ObjectChange {
@@ -46,7 +47,29 @@ interface ObjectChange {
   objectType?: string;
 }
 
-function extractCreatedByType(tx: unknown): Record<string, string[]> {
+interface CreatedEffectEntry {
+  reference?: {
+    objectId?: string;
+  };
+}
+
+export interface DiscoveredWarResolution {
+  warId: number;
+  warDisplayName: string;
+  transactionDigest: string;
+  warResolutionObjectId: string;
+  victorTribeId: number | null;
+  outcome: number | null;
+  resolvedAtMs: number | null;
+  winMarginAtResolution: number | null;
+  tribeScores: Array<{
+    tribeId: number;
+    displayName: string;
+    score: number;
+  }>;
+}
+
+function extractCreatedByTypeFromObjectChanges(tx: unknown): Record<string, string[]> {
   const result = tx as { objectChanges?: ObjectChange[] };
   const byType: Record<string, string[]> = {};
   for (const change of result.objectChanges ?? []) {
@@ -55,6 +78,46 @@ function extractCreatedByType(tx: unknown): Record<string, string[]> {
     byType[key] ??= [];
     byType[key].push(change.objectId);
   }
+  return byType;
+}
+
+async function extractCreatedByType(
+  client: SuiJsonRpcClient,
+  tx: unknown,
+): Promise<Record<string, string[]>> {
+  const byType = extractCreatedByTypeFromObjectChanges(tx);
+  if (Object.keys(byType).length > 0) {
+    return byType;
+  }
+
+  const createdEffects =
+    (tx as { effects?: { created?: CreatedEffectEntry[] } }).effects?.created ?? [];
+  const createdObjectIds = createdEffects
+    .map((entry) => entry.reference?.objectId)
+    .filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+
+  if (createdObjectIds.length === 0) {
+    return byType;
+  }
+
+  const createdObjects = await client.multiGetObjects({
+    ids: createdObjectIds,
+    options: { showType: true, showContent: true },
+  });
+
+  for (const entry of createdObjects) {
+    const objectId = entry.data?.objectId;
+    const objectType =
+      entry.data?.type
+      ?? (entry.data?.content as { type?: string } | undefined)?.type
+      ?? "unknown";
+    if (!objectId) {
+      continue;
+    }
+    byType[objectType] ??= [];
+    byType[objectType].push(objectId);
+  }
+
   return byType;
 }
 
@@ -71,6 +134,145 @@ function findAllCreatedIdsByTypeSuffix(byType: Record<string, string[]>, suffix:
     if (type.includes(suffix)) out.push(...ids);
   }
   return out;
+}
+
+function parseNumberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function parseResolvedTribeScores(value: unknown): DiscoveredWarResolution["tribeScores"] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+      const fields = (entry as { fields?: Record<string, unknown> }).fields ?? {};
+      const tribeId = parseNumberOrNull(fields.tribe_id);
+      const score = parseNumberOrNull(fields.score);
+      if (tribeId == null || score == null) {
+        return null;
+      }
+      return {
+        tribeId,
+        displayName: String(fields.display_name ?? `Tribe ${tribeId}`),
+        score,
+      };
+    })
+    .filter((entry): entry is DiscoveredWarResolution["tribeScores"][number] => entry !== null)
+    .sort((a, b) => b.score - a.score);
+}
+
+async function queryResolvedWarEvent(
+  client: SuiJsonRpcClient,
+  packageId: string,
+  warId?: number | null,
+): Promise<EventEntry | null> {
+  const response = await client.queryEvents({
+    query: { MoveEventType: `${packageId}::registry::WarResolvedEvent` },
+    order: "descending",
+    limit: 50,
+  });
+
+  const entries = (response.data ?? []) as EventEntry[];
+
+  if (warId == null) {
+    return entries[0] ?? null;
+  }
+
+  for (const entry of entries) {
+    const parsedJson = entry.parsedJson as Record<string, unknown> | undefined;
+    if (Number(parsedJson?.war_id) === warId) {
+      return entry;
+    }
+  }
+
+  return null;
+}
+
+export async function discoverWarResolution(opts: {
+  packageId: string;
+  rpcUrl?: string;
+  warId: number;
+}): Promise<DiscoveredWarResolution | null> {
+  const rpcUrl = opts.rpcUrl || getJsonRpcFullnodeUrl("testnet");
+  const client = new SuiJsonRpcClient({ url: rpcUrl, network: "testnet" });
+  const resolvedEvent = await queryResolvedWarEvent(client, opts.packageId, opts.warId);
+
+  if (!resolvedEvent) {
+    return null;
+  }
+
+  const txDigest = resolvedEvent.id?.txDigest;
+  if (!txDigest) {
+    throw new Error(`WarResolvedEvent for war ${opts.warId} did not include a txDigest`);
+  }
+
+  const tx = await client.getTransactionBlock({
+    digest: txDigest,
+    options: { showObjectChanges: true, showEffects: true },
+  });
+  const createdByType = await extractCreatedByType(client, tx);
+  const resolutionObjectId = findCreatedIdByTypeSuffix(createdByType, "::registry::WarResolution");
+
+  if (!resolutionObjectId) {
+    throw new Error(`Could not extract WarResolution object id from tx ${txDigest}`);
+  }
+  const resolutionObjectResponse = await client.getObject({
+    id: resolutionObjectId,
+    options: { showContent: true },
+  });
+  const resolutionFields =
+    (resolutionObjectResponse.data?.content as { fields?: Record<string, unknown> } | undefined)?.fields ?? {};
+
+  return {
+    warId: parseNumberOrNull(resolutionFields.war_id) ?? opts.warId,
+    warDisplayName: String(
+      resolutionFields.war_display_name
+      ?? resolvedEvent.parsedJson?.war_display_name
+      ?? `War ${opts.warId}`,
+    ),
+    transactionDigest: txDigest,
+    warResolutionObjectId: resolutionObjectId,
+    victorTribeId: parseNumberOrNull(resolutionFields.victor_tribe_id),
+    outcome: parseNumberOrNull(resolutionFields.outcome ?? resolvedEvent.parsedJson?.outcome),
+    resolvedAtMs: parseNumberOrNull(resolutionFields.resolved_at_ms ?? resolvedEvent.timestampMs),
+    winMarginAtResolution: parseNumberOrNull(resolutionFields.win_margin_at_resolution),
+    tribeScores: parseResolvedTribeScores(resolutionFields.tribe_scores),
+  };
+}
+
+export async function discoverLatestResolvedWarResolution(opts: {
+  packageId: string;
+  rpcUrl?: string;
+}): Promise<DiscoveredWarResolution | null> {
+  const rpcUrl = opts.rpcUrl || getJsonRpcFullnodeUrl("testnet");
+  const client = new SuiJsonRpcClient({ url: rpcUrl, network: "testnet" });
+  const resolvedEvent = await queryResolvedWarEvent(client, opts.packageId, null);
+  if (!resolvedEvent) {
+    return null;
+  }
+
+  const warId = Number(resolvedEvent.parsedJson?.war_id);
+  if (!Number.isFinite(warId) || warId <= 0) {
+    throw new Error("Latest WarResolvedEvent did not include a valid war_id");
+  }
+
+  return discoverWarResolution({
+    packageId: opts.packageId,
+    rpcUrl,
+    warId,
+  });
 }
 
 export async function discoverWarConfig(opts: {
@@ -108,8 +310,8 @@ export async function discoverWarConfig(opts: {
     for (const candidate of candidates) {
       const digest = candidate.ev.id?.txDigest;
       if (!digest) continue;
-      const tx = await client.getTransactionBlock({ digest, options: { showObjectChanges: true } });
-      const created = extractCreatedByType(tx);
+      const tx = await client.getTransactionBlock({ digest, options: { showObjectChanges: true, showEffects: true } });
+      const created = await extractCreatedByType(client, tx);
       const regId = findCreatedIdByTypeSuffix(created, "::registry::WarRegistry");
       if (!regId) continue;
       const regObj = await client.getObject({ id: regId, options: { showContent: true } });
@@ -134,9 +336,9 @@ export async function discoverWarConfig(opts: {
 
   const tx = await client.getTransactionBlock({
     digest: txDigest,
-    options: { showObjectChanges: true },
+    options: { showObjectChanges: true, showEffects: true },
   });
-  const created = extractCreatedByType(tx);
+  const created = await extractCreatedByType(client, tx);
   const registryId = findCreatedIdByTypeSuffix(created, "::registry::WarRegistry");
   if (!registryId) throw new Error(`Could not extract WarRegistry ID from tx ${txDigest}`);
 
@@ -182,9 +384,9 @@ export async function discoverWarConfig(opts: {
     if (!digest) continue;
     const evTx = await client.getTransactionBlock({
       digest,
-      options: { showObjectChanges: true },
+      options: { showObjectChanges: true, showEffects: true },
     });
-    const evCreated = extractCreatedByType(evTx);
+    const evCreated = await extractCreatedByType(client, evTx);
     const ids = findAllCreatedIdsByTypeSuffix(evCreated, "::config::WarConfigVersion");
     warConfigIds.push(...ids);
   }
@@ -211,9 +413,9 @@ export async function discoverWarConfig(opts: {
     if (!digest) continue;
     const evTx = await client.getTransactionBlock({
       digest,
-      options: { showObjectChanges: true },
+      options: { showObjectChanges: true, showEffects: true },
     });
-    const evCreated = extractCreatedByType(evTx);
+    const evCreated = await extractCreatedByType(client, evTx);
     const ids = findAllCreatedIdsByTypeSuffix(evCreated, "::config::PhaseConfig");
     phaseConfigIds.push(...ids);
   }
@@ -234,9 +436,9 @@ export async function discoverWarConfig(opts: {
     if (!digest) continue;
     const evTx = await client.getTransactionBlock({
       digest,
-      options: { showObjectChanges: true },
+      options: { showObjectChanges: true, showEffects: true },
     });
-    const evCreated = extractCreatedByType(evTx);
+    const evCreated = await extractCreatedByType(client, evTx);
     const ids = findAllCreatedIdsByTypeSuffix(evCreated, "::config::SystemConfigVersion");
     systemConfigIds.push(...ids);
   }
@@ -306,9 +508,10 @@ export async function refreshWarState(opts: {
     if (!digest) continue;
     const evTx = await client.getTransactionBlock({
       digest,
-      options: { showObjectChanges: true },
+      options: { showObjectChanges: true, showEffects: true },
     });
-    freshWarConfigIds.push(...findAllCreatedIdsByTypeSuffix(extractCreatedByType(evTx), "::config::WarConfigVersion"));
+    const evCreated = await extractCreatedByType(client, evTx);
+    freshWarConfigIds.push(...findAllCreatedIdsByTypeSuffix(evCreated, "::config::WarConfigVersion"));
   }
 
   const phaseEvents = await client.queryEvents({
@@ -323,9 +526,10 @@ export async function refreshWarState(opts: {
     if (!digest) continue;
     const evTx = await client.getTransactionBlock({
       digest,
-      options: { showObjectChanges: true },
+      options: { showObjectChanges: true, showEffects: true },
     });
-    freshPhaseConfigIds.push(...findAllCreatedIdsByTypeSuffix(extractCreatedByType(evTx), "::config::PhaseConfig"));
+    const evCreated = await extractCreatedByType(client, evTx);
+    freshPhaseConfigIds.push(...findAllCreatedIdsByTypeSuffix(evCreated, "::config::PhaseConfig"));
   }
 
   const sysEvents = await client.queryEvents({
@@ -343,9 +547,10 @@ export async function refreshWarState(opts: {
     if (!digest) continue;
     const evTx = await client.getTransactionBlock({
       digest,
-      options: { showObjectChanges: true },
+      options: { showObjectChanges: true, showEffects: true },
     });
-    freshSystemConfigIds.push(...findAllCreatedIdsByTypeSuffix(extractCreatedByType(evTx), "::config::SystemConfigVersion"));
+    const evCreated = await extractCreatedByType(client, evTx);
+    freshSystemConfigIds.push(...findAllCreatedIdsByTypeSuffix(evCreated, "::config::SystemConfigVersion"));
   }
 
   // Determine effective tick minutes from latest war config + phase override

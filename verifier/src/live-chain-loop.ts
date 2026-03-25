@@ -1,7 +1,7 @@
 console.log(`[verifier] Starting... (pid=${process.pid}, node=${process.version}, PORT=${process.env.PORT || "unset"})`);
 
 import "dotenv/config";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 import { writeVerifierArtifacts } from "./artifact-output.js";
@@ -21,7 +21,13 @@ import { resolveTick } from "./resolver.js";
 import { loadSystemDisplayConfigs } from "./system-display-config.js";
 import { TickLedger, type CommittedTick } from "./tick-ledger.js";
 import { buildTickPlan } from "./tick-planner.js";
-import { discoverWarConfig, refreshWarState, type DiscoveredWarConfig } from "./discover-war-config.js";
+import {
+  discoverLatestResolvedWarResolution,
+  discoverWarConfig,
+  refreshWarState,
+  type DiscoveredWarConfig,
+  type DiscoveredWarResolution,
+} from "./discover-war-config.js";
 import type {
   EditorialDisplayEntry,
   ResolvedTickResult,
@@ -166,6 +172,7 @@ let refreshResolve: (() => void) | null = null;
 let latestNotifyHint: NotifyHint | null = null;
 let activeShutdownHandler: (() => Promise<void>) | null = null;
 let signalHandlersRegistered = false;
+let lastHydratedResolvedWarId: number | null = null;
 const runtimeStatus: RuntimeStatus = {
   state: "discovering",
   warId: null,
@@ -415,6 +422,79 @@ function readPublishedArtifactSummary(outputPath: string): PublishedArtifactSumm
 
 function refreshPublishedArtifactSummary(outputPath: string): void {
   runtimeDiagnostics.latestPublishedArtifact = readPublishedArtifactSummary(outputPath);
+}
+
+function resolutionArtifactPath(outputPath: string): string {
+  return path.join(path.dirname(outputPath), "resolution.json");
+}
+
+function writeResolutionArtifact(outputPath: string, resolutionBlock: Record<string, unknown>): void {
+  const targetPath = resolutionArtifactPath(outputPath);
+  mkdirSync(path.dirname(targetPath), { recursive: true });
+  const tmpPath = targetPath + ".tmp";
+  writeFileSync(tmpPath, JSON.stringify(resolutionBlock, null, 2) + "\n", "utf8");
+  renameSync(tmpPath, targetPath);
+}
+
+function clearResolutionArtifact(outputPath: string): void {
+  const targetPath = resolutionArtifactPath(outputPath);
+  if (!existsSync(targetPath)) {
+    return;
+  }
+  unlinkSync(targetPath);
+}
+
+function publishedArtifactHasResolvedWar(outputPath: string, warId: number): boolean {
+  if (!existsSync(outputPath) || !existsSync(resolutionArtifactPath(outputPath))) {
+    return false;
+  }
+
+  try {
+    const latestJson = JSON.parse(readFileSync(outputPath, "utf8")) as {
+      config?: { warId?: unknown };
+      resolution?: { transactionDigest?: unknown } | null;
+    };
+    return Number(latestJson.config?.warId) === warId
+      && typeof latestJson.resolution?.transactionDigest === "string"
+      && latestJson.resolution.transactionDigest.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function buildResolutionBlock(
+  discovered: DiscoveredWarConfig,
+  resolution: DiscoveredWarResolution,
+  tribeNameOverrides: Record<string, string>,
+) {
+  const allScores = resolution.tribeScores.map((entry) => ({
+    tribeId: entry.tribeId,
+    name: tribeNameOverrides[String(entry.tribeId)] ?? entry.displayName ?? `Tribe ${entry.tribeId}`,
+    points: entry.score,
+  }));
+  const winner = resolution.victorTribeId == null
+    ? null
+    : allScores.find((entry) => entry.tribeId === resolution.victorTribeId) ?? null;
+  const runnerUp = allScores
+    .filter((entry) => winner == null || entry.tribeId !== winner.tribeId)
+    .sort((a, b) => b.points - a.points)[0] ?? null;
+  const actualMargin = allScores.length >= 2
+    ? Math.max(0, allScores[0].points - allScores[1].points)
+    : allScores[0]?.points ?? 0;
+  const winMargin = resolution.winMarginAtResolution ?? discovered.winMargin;
+
+  return {
+    warResolutionObjectId: resolution.warResolutionObjectId,
+    transactionDigest: resolution.transactionDigest,
+    winner,
+    runnerUp,
+    allScores,
+    isDraw: resolution.victorTribeId == null,
+    winMargin,
+    actualMargin,
+    endedAtMs: discovered.endedAtMs,
+    resolvedAtMs: resolution.resolvedAtMs ?? Date.now(),
+  };
 }
 
 function currentNotifyHint(): NotifyHint | null {
@@ -1083,6 +1163,164 @@ async function runTick(
   };
 }
 
+async function hydrateLatestResolvedWarArtifacts(
+  packageId: string,
+  rpcUrl: string,
+  graphqlUrl: string | null,
+  outputPath: string,
+): Promise<number | null> {
+  const databaseUrl = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL || null;
+  if (!databaseUrl) {
+    return null;
+  }
+
+  const latestResolvedWar = await discoverLatestResolvedWarResolution({
+    packageId,
+    rpcUrl,
+  });
+  if (!latestResolvedWar) {
+    return null;
+  }
+
+  if (
+    lastHydratedResolvedWarId === latestResolvedWar.warId
+    && publishedArtifactHasResolvedWar(outputPath, latestResolvedWar.warId)
+  ) {
+    return latestResolvedWar.warId;
+  }
+
+  const discovered = await discoverWarConfig({
+    packageId,
+    rpcUrl,
+    warId: latestResolvedWar.warId,
+  });
+
+  const ledger = new TickLedger(databaseUrl);
+  let committed: CommittedTick[] = [];
+  try {
+    await ledger.ensureTable();
+    committed = await ledger.loadCommittedTicks(discovered.warId);
+  } finally {
+    await ledger.close();
+  }
+
+  if (committed.length === 0) {
+    console.warn(`  No committed ticks found for resolved War ${discovered.warId}; leaving public artifacts unchanged.`);
+    return null;
+  }
+
+  const resolved = committed
+    .map((entry) => entry.resolved)
+    .sort((a, b) => a.snapshot.tickTimestampMs - b.snapshot.tickTimestampMs || a.snapshot.systemId - b.snapshot.systemId);
+  const firstTickMs = resolved[0]?.snapshot.tickTimestampMs ?? null;
+  const lastTickMs = resolved.length > 0 ? resolved[resolved.length - 1].snapshot.tickTimestampMs : null;
+  const referenceMs = lastTickMs ?? discovered.endedAtMs ?? Date.now();
+  const tickTimestamps = [...new Set(resolved.map((entry) => entry.snapshot.tickTimestampMs))].sort((a, b) => a - b);
+  const trackedSystemIds = [...new Set(resolved.map((entry) => entry.snapshot.systemId))].sort((a, b) => a - b);
+
+  const config = buildVerifierConfig(discovered, rpcUrl, graphqlUrl, outputPath);
+  const dataSource = new RegistryBackedVerifierDataSource(config);
+  const phaseMetadata = await collectPhaseMetadata(dataSource, referenceMs, discovered.defaultTickMinutes);
+  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(
+    config.systemDisplayConfigPath,
+    process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
+  );
+  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPathForOutput(outputPath));
+  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
+    entries: editorialDisplayEntries,
+    legacyConfigs: legacySystemDisplayConfigs,
+    warId: discovered.warId,
+    atMs: referenceMs,
+    phaseId: phaseMetadata.phaseId,
+    systemIds: trackedSystemIds.length > 0 ? trackedSystemIds : discovered.warSystemIds,
+  });
+  const tribeNameOverrides = {
+    ...discovered.tribeNames,
+    ...Object.fromEntries(
+      latestResolvedWar.tribeScores.map((entry) => [String(entry.tribeId), entry.displayName] as const),
+    ),
+    ...dataSource.getTribeNameMap(),
+  };
+  const payload = buildScoreboardPayload(
+    {
+      warName: discovered.warDisplayName || latestResolvedWar.warDisplayName || `War ${discovered.warId}`,
+      tribeNames: tribeNameOverrides,
+    },
+    resolved.map((entry) => entry.snapshot),
+    resolved.map((entry) => entry.commitment),
+    discovered.participatingTribeIds,
+    {
+      tickRateMinutes: phaseMetadata.tickRateMinutes,
+      systemDisplayConfigs,
+    },
+  );
+  const latestSnapshot = resolved.length > 0 ? resolved[resolved.length - 1].snapshot : null;
+  const tickStatus = latestSnapshot?.resolutionMetadata.tickStatus ?? null;
+  const degradedReason = latestSnapshot?.resolutionMetadata.degradedReason ?? null;
+  const carriedForwardFromTickMs = latestSnapshot?.resolutionMetadata.carriedForwardFromTickMs ?? null;
+  const activeSystems = phaseMetadata.activeSystemIds.length > 0
+    ? phaseMetadata.activeSystemIds
+    : trackedSystemIds;
+  const auditInputs = dataSource.getAuditInputSummary?.() ?? {
+    candidateCollection: { mode: "registry_live_objects" },
+    activeSystems: { mode: "phase_config_live" },
+    ownerResolution: { mode: "graphql_ownercap_chain" },
+    locationResolution: { mode: "live_system_field_runtime_mapping" },
+  };
+  auditInputs.activeSystems = {
+    mode: "phase_config_live",
+    detail:
+      phaseMetadata.phaseLabel && activeSystems.length > 0
+        ? `${phaseMetadata.phaseLabel} // ${activeSystems.join(", ")}`
+        : phaseMetadata.phaseLabel
+          ? `${phaseMetadata.phaseLabel} // no active systems`
+          : activeSystems.length > 0
+            ? activeSystems.join(", ")
+            : "No active systems published yet.",
+    objectCount: activeSystems.length,
+  };
+
+  const resolutionBlock = buildResolutionBlock(discovered, latestResolvedWar, tribeNameOverrides);
+  const envelope = {
+    tickStatus,
+    degradedReason,
+    carriedForwardFromTickMs,
+    config: {
+      source: "live-chain",
+      warId: discovered.warId,
+      tickStartMs: firstTickMs ?? referenceMs,
+      tickCount: tickTimestamps.length,
+      phaseStatusWithheld: false,
+      phaseId: phaseMetadata.phaseId,
+      phaseStartMs: phaseMetadata.phaseStartMs,
+      phaseEndMs: phaseMetadata.phaseEndMs,
+      nextPhaseStartMs: phaseMetadata.nextPhaseStartMs,
+      phaseLabel: phaseMetadata.phaseLabel,
+      warEndMs: discovered.endedAtMs,
+      tickRateMinutes: phaseMetadata.tickRateMinutes,
+      tickStatus,
+      degradedReason,
+      carriedForwardFromTickMs,
+    },
+    tickPlan: resolved.map((entry) => ({
+      tickTimestampMs: entry.snapshot.tickTimestampMs,
+      systemId: entry.snapshot.systemId,
+    })),
+    commitments: resolved.map((entry) => entry.commitment),
+    snapshots: resolved.map((entry) => entry.snapshot),
+    scoreboard: payload,
+    systemDisplayConfigs,
+    resolution: resolutionBlock,
+  };
+
+  await writeVerifierArtifacts(outputPath, envelope, "live-chain", auditInputs, resolved, editorialDisplayEntries);
+  writeResolutionArtifact(outputPath, resolutionBlock);
+  refreshPublishedArtifactSummary(outputPath);
+  lastHydratedResolvedWarId = discovered.warId;
+  console.log(`  Preserved ended War ${discovered.warId} as the public frozen artifact while waiting for the next war.`);
+  return discovered.warId;
+}
+
 async function runWarLoop(
   discovered: DiscoveredWarConfig,
   packageId: string,
@@ -1126,6 +1364,9 @@ async function runWarLoop(
     await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once);
     return;
   }
+
+  lastHydratedResolvedWarId = null;
+  clearResolutionArtifact(outputPath);
 
   const hasConfigs = discovered.systemConfigIds.length > 0;
 
@@ -1878,6 +2119,12 @@ async function pollForNextWar(
     return;
   }
 
+  try {
+    await hydrateLatestResolvedWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
+  } catch (error) {
+    console.error(`  Could not hydrate frozen ended-war artifacts: ${errorMessage(error)}`);
+  }
+
   while (true) {
     runtimeStatus.state = "waiting";
     runtimeStatus.warId = null;
@@ -1900,6 +2147,11 @@ async function pollForNextWar(
       setLastDiscoveryError("poll_for_next_war", err);
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("No unresolved war found")) {
+        try {
+          await hydrateLatestResolvedWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
+        } catch (error) {
+          console.error(`  Could not refresh frozen ended-war artifacts: ${errorMessage(error)}`);
+        }
         console.log("  No unresolved wars found. Will retry...");
       } else {
         console.error("  Poll error:", msg);
