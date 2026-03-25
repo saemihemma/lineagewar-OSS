@@ -147,6 +147,20 @@ function parseNumberOrNull(value: unknown): number | null {
   return null;
 }
 
+function shouldSkipAutoDiscoveredWar(
+  regFields: Record<string, unknown>,
+  nowMs: number,
+): boolean {
+  const resolved = regFields.resolved === true;
+  if (resolved) {
+    return true;
+  }
+
+  const endedAtMs = parseOptionU64(regFields.ended_at_ms);
+  const tribeCount = parseNumberOrNull(regFields.tribe_count) ?? 0;
+  return endedAtMs != null && endedAtMs <= nowMs && tribeCount <= 0;
+}
+
 function parseResolvedTribeScores(value: unknown): DiscoveredWarResolution["tribeScores"] {
   if (!Array.isArray(value)) {
     return [];
@@ -306,6 +320,7 @@ export async function discoverWarConfig(opts: {
       if (Number.isFinite(evWarId)) candidates.push({ ev, warId: evWarId });
     }
     candidates.sort((a, b) => b.warId - a.warId);
+    const nowMs = Date.now();
 
     for (const candidate of candidates) {
       const digest = candidate.ev.id?.txDigest;
@@ -316,7 +331,7 @@ export async function discoverWarConfig(opts: {
       if (!regId) continue;
       const regObj = await client.getObject({ id: regId, options: { showContent: true } });
       const regFields = (regObj.data?.content as { fields?: Record<string, unknown> })?.fields ?? {};
-      if (regFields.resolved === true) continue;
+      if (shouldSkipAutoDiscoveredWar(regFields, nowMs)) continue;
       targetEvent = candidate.ev;
       targetWarId = candidate.warId;
       break;

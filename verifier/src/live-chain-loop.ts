@@ -665,8 +665,16 @@ async function discoverPreferredWar(
         rpcUrl,
         warId: preferredWarId,
       });
-      if (!hinted.warResolved) {
+      const hintedIsZombie =
+        !hinted.warResolved
+        && hinted.endedAtMs != null
+        && hinted.endedAtMs <= Date.now()
+        && hinted.participatingTribeIds.length === 0;
+      if (!hinted.warResolved && !hintedIsZombie) {
         return hinted;
+      }
+      if (hintedIsZombie) {
+        console.warn(`Preferred war ${preferredWarId} is ended, unresolved, and has no tribes; skipping it during auto-discovery.`);
       }
     } catch (error) {
       console.warn(
