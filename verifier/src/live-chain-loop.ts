@@ -21,7 +21,7 @@ import { resolveTick } from "./resolver.js";
 import { TickLedger, type CommittedTick } from "./tick-ledger.js";
 import { buildTickPlan } from "./tick-planner.js";
 import {
-  discoverLatestResolvedWarResolution,
+  discoverWarResolution,
   discoverWarConfig,
   refreshWarState,
   type DiscoveredWarConfig,
@@ -79,6 +79,12 @@ interface PublishedArtifactSummary {
   tickStatus: TickStatus | null;
   systemCount: number | null;
   error: string | null;
+}
+
+interface StickyPublicWarState {
+  warId: number;
+  lastPublishedAtMs: number;
+  lastTickMs: number | null;
 }
 
 interface RuntimeWarSnapshot {
@@ -171,7 +177,7 @@ let refreshResolve: (() => void) | null = null;
 let latestNotifyHint: NotifyHint | null = null;
 let activeShutdownHandler: (() => Promise<void>) | null = null;
 let signalHandlersRegistered = false;
-let lastHydratedResolvedWarId: number | null = null;
+let lastHydratedPublicWarId: number | null = null;
 const runtimeStatus: RuntimeStatus = {
   state: "discovering",
   warId: null,
@@ -427,12 +433,85 @@ function resolutionArtifactPath(outputPath: string): string {
   return path.join(path.dirname(outputPath), "resolution.json");
 }
 
+function publicWarStatePath(outputPath: string): string {
+  return path.join(path.dirname(outputPath), "public-war-state.json");
+}
+
 function writeResolutionArtifact(outputPath: string, resolutionBlock: Record<string, unknown>): void {
   const targetPath = resolutionArtifactPath(outputPath);
   mkdirSync(path.dirname(targetPath), { recursive: true });
   const tmpPath = targetPath + ".tmp";
   writeFileSync(tmpPath, JSON.stringify(resolutionBlock, null, 2) + "\n", "utf8");
   renameSync(tmpPath, targetPath);
+}
+
+function readStickyPublicWarState(outputPath: string): StickyPublicWarState | null {
+  const targetPath = publicWarStatePath(outputPath);
+  if (!existsSync(targetPath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(targetPath, "utf8")) as Partial<StickyPublicWarState>;
+    const warId = Number(parsed.warId);
+    const lastPublishedAtMs = Number(parsed.lastPublishedAtMs);
+    const rawLastTickMs = parsed.lastTickMs;
+    const lastTickMs =
+      rawLastTickMs == null
+        ? null
+        : Number.isFinite(Number(rawLastTickMs))
+          ? Number(rawLastTickMs)
+          : null;
+    if (!Number.isFinite(warId) || warId <= 0 || !Number.isFinite(lastPublishedAtMs)) {
+      return null;
+    }
+    return {
+      warId,
+      lastPublishedAtMs,
+      lastTickMs,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStickyPublicWarState(outputPath: string, state: StickyPublicWarState): void {
+  const targetPath = publicWarStatePath(outputPath);
+  mkdirSync(path.dirname(targetPath), { recursive: true });
+  const tmpPath = targetPath + ".tmp";
+  writeFileSync(tmpPath, JSON.stringify(state, null, 2) + "\n", "utf8");
+  renameSync(tmpPath, targetPath);
+}
+
+function rememberStickyPublicWar(outputPath: string, warId: number, lastTickMs: number | null): void {
+  writeStickyPublicWarState(outputPath, {
+    warId,
+    lastPublishedAtMs: Date.now(),
+    lastTickMs,
+  });
+}
+
+function resolveStickyPublicWarState(outputPath: string): StickyPublicWarState | null {
+  const existing = readStickyPublicWarState(outputPath);
+  if (existing) {
+    return existing;
+  }
+
+  const published = readPublishedArtifactSummary(outputPath);
+  if (
+    published.warId != null
+    && publishedArtifactHasResolvedWar(outputPath, published.warId)
+  ) {
+    const seeded: StickyPublicWarState = {
+      warId: published.warId,
+      lastPublishedAtMs: published.updatedAtMs ?? Date.now(),
+      lastTickMs: published.lastTickMs,
+    };
+    writeStickyPublicWarState(outputPath, seeded);
+    return seeded;
+  }
+
+  return null;
 }
 
 function clearResolutionArtifact(outputPath: string): void {
@@ -1133,6 +1212,7 @@ async function runTick(
 
   await writeVerifierArtifacts(outputPath, envelope, "live-chain", auditInputs, resolved, editorialDisplayEntries);
   refreshPublishedArtifactSummary(outputPath);
+  rememberStickyPublicWar(outputPath, config.warId, resolved.length > 0 ? resolved[resolved.length - 1].snapshot.tickTimestampMs : null);
 
   // Log latest tick results
   const latestTickMs = currentTickBoundary;
@@ -1162,7 +1242,7 @@ async function runTick(
   };
 }
 
-async function hydrateLatestResolvedWarArtifacts(
+async function hydrateStickyPublicWarArtifacts(
   packageId: string,
   rpcUrl: string,
   graphqlUrl: string | null,
@@ -1173,25 +1253,32 @@ async function hydrateLatestResolvedWarArtifacts(
     return null;
   }
 
-  const latestResolvedWar = await discoverLatestResolvedWarResolution({
-    packageId,
-    rpcUrl,
-  });
-  if (!latestResolvedWar) {
+  const stickyWar = resolveStickyPublicWarState(outputPath);
+  if (!stickyWar) {
     return null;
   }
 
   if (
-    lastHydratedResolvedWarId === latestResolvedWar.warId
-    && publishedArtifactHasResolvedWar(outputPath, latestResolvedWar.warId)
+    lastHydratedPublicWarId === stickyWar.warId
+    && publishedArtifactHasResolvedWar(outputPath, stickyWar.warId)
   ) {
-    return latestResolvedWar.warId;
+    return stickyWar.warId;
+  }
+
+  const resolvedWar = await discoverWarResolution({
+    packageId,
+    rpcUrl,
+    warId: stickyWar.warId,
+  });
+  if (!resolvedWar) {
+    console.warn(`  Sticky public war ${stickyWar.warId} has no on-chain resolution yet; leaving public artifacts unchanged.`);
+    return null;
   }
 
   const discovered = await discoverWarConfig({
     packageId,
     rpcUrl,
-    warId: latestResolvedWar.warId,
+    warId: stickyWar.warId,
   });
 
   const ledger = new TickLedger(databaseUrl);
@@ -1232,13 +1319,13 @@ async function hydrateLatestResolvedWarArtifacts(
   const tribeNameOverrides = {
     ...discovered.tribeNames,
     ...Object.fromEntries(
-      latestResolvedWar.tribeScores.map((entry) => [String(entry.tribeId), entry.displayName] as const),
+      resolvedWar.tribeScores.map((entry) => [String(entry.tribeId), entry.displayName] as const),
     ),
     ...dataSource.getTribeNameMap(),
   };
   const payload = buildScoreboardPayload(
     {
-      warName: discovered.warDisplayName || latestResolvedWar.warDisplayName || `War ${discovered.warId}`,
+      warName: discovered.warDisplayName || resolvedWar.warDisplayName || `War ${discovered.warId}`,
       tribeNames: tribeNameOverrides,
     },
     resolved.map((entry) => entry.snapshot),
@@ -1275,7 +1362,7 @@ async function hydrateLatestResolvedWarArtifacts(
     objectCount: activeSystems.length,
   };
 
-  const resolutionBlock = buildResolutionBlock(discovered, latestResolvedWar, tribeNameOverrides);
+  const resolutionBlock = buildResolutionBlock(discovered, resolvedWar, tribeNameOverrides);
   const envelope = {
     tickStatus,
     degradedReason,
@@ -1311,8 +1398,9 @@ async function hydrateLatestResolvedWarArtifacts(
   await writeVerifierArtifacts(outputPath, envelope, "live-chain", auditInputs, resolved, editorialDisplayEntries);
   writeResolutionArtifact(outputPath, resolutionBlock);
   refreshPublishedArtifactSummary(outputPath);
-  lastHydratedResolvedWarId = discovered.warId;
-  console.log(`  Preserved ended War ${discovered.warId} as the public frozen artifact while waiting for the next war.`);
+  rememberStickyPublicWar(outputPath, discovered.warId, lastTickMs);
+  lastHydratedPublicWarId = discovered.warId;
+  console.log(`  Preserved sticky public War ${discovered.warId} as the frozen artifact while waiting for the next war.`);
   return discovered.warId;
 }
 
@@ -1360,7 +1448,7 @@ async function runWarLoop(
     return;
   }
 
-  lastHydratedResolvedWarId = null;
+  lastHydratedPublicWarId = null;
   clearResolutionArtifact(outputPath);
 
   const hasConfigs = discovered.systemConfigIds.length > 0;
@@ -1679,6 +1767,7 @@ async function runWarLoop(
         } catch {
           // If patching fails, resolution.json is the fallback
         }
+        rememberStickyPublicWar(outputPath, discovered.warId, finalResults.lastTickMs);
         if (ledger) await ledger.close();
 
         if (warIdOverride != null) {
@@ -2115,7 +2204,7 @@ async function pollForNextWar(
   }
 
   try {
-    await hydrateLatestResolvedWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
+    await hydrateStickyPublicWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
   } catch (error) {
     console.error(`  Could not hydrate frozen ended-war artifacts: ${errorMessage(error)}`);
   }
@@ -2143,7 +2232,7 @@ async function pollForNextWar(
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("No unresolved war found")) {
         try {
-          await hydrateLatestResolvedWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
+          await hydrateStickyPublicWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
         } catch (error) {
           console.error(`  Could not refresh frozen ended-war artifacts: ${errorMessage(error)}`);
         }

@@ -266,29 +266,6 @@ export async function discoverWarResolution(opts: {
   };
 }
 
-export async function discoverLatestResolvedWarResolution(opts: {
-  packageId: string;
-  rpcUrl?: string;
-}): Promise<DiscoveredWarResolution | null> {
-  const rpcUrl = opts.rpcUrl || getJsonRpcFullnodeUrl("testnet");
-  const client = new SuiJsonRpcClient({ url: rpcUrl, network: "testnet" });
-  const resolvedEvent = await queryResolvedWarEvent(client, opts.packageId, null);
-  if (!resolvedEvent) {
-    return null;
-  }
-
-  const warId = Number(resolvedEvent.parsedJson?.war_id);
-  if (!Number.isFinite(warId) || warId <= 0) {
-    throw new Error("Latest WarResolvedEvent did not include a valid war_id");
-  }
-
-  return discoverWarResolution({
-    packageId: opts.packageId,
-    rpcUrl,
-    warId,
-  });
-}
-
 export async function discoverWarConfig(opts: {
   packageId: string;
   rpcUrl?: string;
