@@ -7,9 +7,9 @@ import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 import { writeVerifierArtifacts } from "./artifact-output.js";
 import {
   defaultEditorialDisplayPath,
+  loadResolvedSystemDisplayConfigs,
   readEditorialDisplayEntries,
   readEditorialDisplayEntriesForWar,
-  resolveCurrentSystemDisplayConfigs,
   upsertEditorialDisplayEntries,
 } from "./editorial-display-store.js";
 import { buildScoreboardPayload } from "./frontend-output.js";
@@ -18,7 +18,6 @@ import { hashCanonicalSnapshot } from "./hash.js";
 import { submitResolveWarWithRetry, type ResolutionResult } from "./on-chain-resolve.js";
 import { RegistryBackedVerifierDataSource } from "./registry-source.js";
 import { resolveTick } from "./resolver.js";
-import { loadSystemDisplayConfigs } from "./system-display-config.js";
 import { TickLedger, type CommittedTick } from "./tick-ledger.js";
 import { buildTickPlan } from "./tick-planner.js";
 import {
@@ -761,14 +760,10 @@ async function writeBootstrapScoreboard(
   const phaseMetadata = await collectPhaseMetadata(dataSource, now, fallbackTickRateMinutes);
   const activeSystemIds =
     phaseMetadata.activeSystemIds.length > 0 ? phaseMetadata.activeSystemIds : discovered.warSystemIds;
-  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(
-    config.systemDisplayConfigPath,
-    process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
-  );
-  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPathForOutput(outputPath));
-  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
-    entries: editorialDisplayEntries,
-    legacyConfigs: legacySystemDisplayConfigs,
+  const { editorialDisplayEntries, systemDisplayConfigs } = loadResolvedSystemDisplayConfigs({
+    systemDisplayConfigPath: config.systemDisplayConfigPath,
+    systemNamesPath: process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
+    editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
     warId: discovered.warId,
     atMs: now,
     phaseId: phaseMetadata.phaseId,
@@ -943,16 +938,12 @@ async function runTick(
     + `${currentBoundaryEntries.length} for current boundary | `
     + `systems: ${currentBoundarySystemIds.length > 0 ? currentBoundarySystemIds.join(", ") : "none"}`,
   );
-  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(
-    config.systemDisplayConfigPath,
-    process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
-  );
-  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPathForOutput(outputPath));
   const currentDisplaySystemIds =
     currentPhase?.activeSystemIds.length ? currentPhase.activeSystemIds : discovered.warSystemIds;
-  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
-    entries: editorialDisplayEntries,
-    legacyConfigs: legacySystemDisplayConfigs,
+  const { editorialDisplayEntries, systemDisplayConfigs } = loadResolvedSystemDisplayConfigs({
+    systemDisplayConfigPath: config.systemDisplayConfigPath,
+    systemNamesPath: process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
+    editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
     warId: discovered.warId,
     atMs: now,
     phaseId: currentPhase?.phaseId ?? null,
@@ -1229,14 +1220,10 @@ async function hydrateLatestResolvedWarArtifacts(
   const config = buildVerifierConfig(discovered, rpcUrl, graphqlUrl, outputPath);
   const dataSource = new RegistryBackedVerifierDataSource(config);
   const phaseMetadata = await collectPhaseMetadata(dataSource, referenceMs, discovered.defaultTickMinutes);
-  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(
-    config.systemDisplayConfigPath,
-    process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
-  );
-  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPathForOutput(outputPath));
-  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
-    entries: editorialDisplayEntries,
-    legacyConfigs: legacySystemDisplayConfigs,
+  const { editorialDisplayEntries, systemDisplayConfigs } = loadResolvedSystemDisplayConfigs({
+    systemDisplayConfigPath: config.systemDisplayConfigPath,
+    systemNamesPath: process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
+    editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
     warId: discovered.warId,
     atMs: referenceMs,
     phaseId: phaseMetadata.phaseId,

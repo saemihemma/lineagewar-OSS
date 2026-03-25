@@ -58,7 +58,7 @@ export default function SystemControlPanel({
   systemDisplayConfigs = [],
 }: SystemControlPanelProps) {
   const holdStreaks = computeHoldStreaks(snapshots);
-  const configById = new Map(systemDisplayConfigs.map((c) => [c.systemId, c]));
+  const configById = new Map(systemDisplayConfigs.map((config) => [String(config.systemId), config]));
 
   if (systems.length === 0) {
     return (
@@ -86,7 +86,6 @@ export default function SystemControlPanel({
         alignItems: "center",
       }}
     >
-      {/* Header row */}
       <div style={{ display: "contents" }}>
         <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }} />
         <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>SYSTEM</span>
@@ -96,20 +95,16 @@ export default function SystemControlPanel({
         <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>RULE</span>
       </div>
 
-      {/* Header separator — unbroken line */}
       <span style={separator("var(--border-panel)")} />
 
-      {/* Data rows */}
       {systems.map((system) => {
         const dot = dotColor(system.state, system.controller, tribeScores);
         const label = stateLabel(system.state, system.controller, tribeScores);
         const streak = holdStreaks.get(String(system.id)) ?? 0;
-        const config = configById.get(String(system.id));
-        const ruleText = config?.publicRuleText?.trim() || "—";
+        const ruleText = configById.get(String(system.id))?.publicRuleText?.trim() || "—";
 
         return (
           <div key={system.id} style={{ display: "contents" }}>
-            {/* State dot */}
             <span style={cellPad}>
               <span
                 style={{
@@ -122,7 +117,6 @@ export default function SystemControlPanel({
               />
             </span>
 
-            {/* System name */}
             <span
               style={{
                 ...cellPad,
@@ -137,7 +131,6 @@ export default function SystemControlPanel({
               {system.name.toUpperCase()}
             </span>
 
-            {/* Points per tick */}
             <span
               style={{
                 ...cellPad,
@@ -148,7 +141,6 @@ export default function SystemControlPanel({
               {system.pointsPerTick > 0 ? String(system.pointsPerTick) : "—"}
             </span>
 
-            {/* Control label */}
             <span
               style={{
                 ...cellPad,
@@ -160,7 +152,6 @@ export default function SystemControlPanel({
               {label.text}
             </span>
 
-            {/* Hold streak */}
             <span
               style={{
                 ...cellPad,
@@ -171,7 +162,6 @@ export default function SystemControlPanel({
               {streak > 0 ? `×${streak}` : "—"}
             </span>
 
-            {/* Rule label */}
             <span
               style={{
                 ...cellPad,
@@ -184,7 +174,6 @@ export default function SystemControlPanel({
               {ruleText}
             </span>
 
-            {/* Row separator — unbroken line */}
             <span style={separator("var(--border-inactive)")} />
           </div>
         );

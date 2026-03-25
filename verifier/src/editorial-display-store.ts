@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { loadSystemDisplayConfigs } from "./system-display-config.js";
 import type { EditorialDisplayEntry, SystemDisplayConfig } from "./types.js";
 
 interface EditorialDisplayDocument {
@@ -232,4 +233,42 @@ export function resolveEditorialDisplayForTick(options: {
     legacyBySystemId.get(normalizedSystemId) ?? null,
     normalizedSystemId,
   );
+}
+
+export function loadResolvedSystemDisplayConfigs(options: {
+  systemDisplayConfigPath: string | null;
+  systemNamesPath?: string | null;
+  editorialDisplayPath: string | null;
+  warId: number;
+  atMs: number;
+  phaseId?: number | null;
+  systemIds?: Array<string | number>;
+}): {
+  editorialDisplayEntries: EditorialDisplayEntry[];
+  systemDisplayConfigs: SystemDisplayConfig[];
+} {
+  const {
+    systemDisplayConfigPath,
+    systemNamesPath = null,
+    editorialDisplayPath,
+    warId,
+    atMs,
+    phaseId = null,
+    systemIds = [],
+  } = options;
+  const legacySystemDisplayConfigs = loadSystemDisplayConfigs(systemDisplayConfigPath, systemNamesPath);
+  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPath);
+  const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
+    entries: editorialDisplayEntries,
+    legacyConfigs: legacySystemDisplayConfigs,
+    warId,
+    atMs,
+    phaseId,
+    systemIds,
+  });
+
+  return {
+    editorialDisplayEntries,
+    systemDisplayConfigs,
+  };
 }
