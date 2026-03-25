@@ -221,10 +221,10 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
         PREDICTION_MARKET_URL,
         "terminal-header-action--mint",
       )}
-      {renderExternalHeaderAction("AIRDROP", AIRDROP_URL, "terminal-header-action--orange")}
+      {renderExternalHeaderAction("$SUFFER AIRDROP", AIRDROP_URL, "terminal-header-action--orange")}
       <Link
         to="/audit"
-        className="terminal-header-action terminal-header-action--mint-primary"
+        className="terminal-header-action terminal-header-action--mint"
       >
         VIEW AUDIT
       </Link>
