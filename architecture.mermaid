@@ -1,18 +1,27 @@
-graph TD
-    Admin[Admin Panel<br/>React + Wallet] -->|wallet-signed txs| Chain[Sui Blockchain<br/>lineage_war package]
-    Admin -->|POST /notify| Verifier[Verifier<br/>Node.js + PostgreSQL]
+flowchart LR
+    Chain["Sui testnet\nlineage_war Move package"]
+    Admin["Admin browser\nReact + Sui wallet"]
+    Scoreboard["Public scoreboard\nReact app"]
+    ActivationApi["Activation API\nHono + PostgreSQL"]
+    Prehype["Pre-war activation UI\nprehype/"]
 
-    Chain -->|events: WarCreated,<br/>TribeRegistered,<br/>ConfigPublished| Verifier
-    Chain -->|GraphQL: assembly<br/>ownership pipeline| Verifier
+    subgraph VerifierRuntime["Verifier runtime"]
+        Verifier["Tick loop + artifact writer"]
+        Ledger[("PostgreSQL\ncommitted_ticks_v2")]
+        Http["Operator HTTP surfaces\n/status\n/notify\n/editorial-display"]
+        PublicArtifacts["Public artifacts\n/verifier/latest.json\n/verifier/resolution.json\n/verifier/public-war-state.json\naudit/"]
+        RuntimeStore["Internal runtime store\neditorial-display.json"]
+    end
 
-    Verifier -->|resolve_war tx| Chain
-    Verifier -->|commit ticks| DB[(PostgreSQL<br/>committed_ticks_v2)]
-    Verifier -->|latest.json<br/>atomic write| Scoreboard[Scoreboard<br/>React]
-
-    DB -->|load committed<br/>ticks| Verifier
-
-    style Admin fill:#1a1a2e,stroke:#e94560,color:#fff
-    style Chain fill:#0f3460,stroke:#e94560,color:#fff
-    style Verifier fill:#16213e,stroke:#0f3460,color:#fff
-    style DB fill:#1a1a2e,stroke:#533483,color:#fff
-    style Scoreboard fill:#1a1a2e,stroke:#e94560,color:#fff
+    Admin -->|"wallet-signed txs"| Chain
+    Admin -->|"POST /notify\nGET/POST /editorial-display"| Http
+    Http --> Verifier
+    Verifier -->|"reads chain state"| Chain
+    Verifier -->|"resolve_war tx"| Chain
+    Verifier <--> Ledger
+    Verifier --> PublicArtifacts
+    Verifier --> RuntimeStore
+    Scoreboard -->|"GET /verifier/latest.json\nGET audit artifacts"| PublicArtifacts
+    Verifier -.->|"serves built / bundle"| Scoreboard
+    Verifier -.->|"serves built /admin bundle"| Admin
+    Prehype --> ActivationApi

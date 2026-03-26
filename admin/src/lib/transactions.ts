@@ -304,8 +304,8 @@ export function buildDraftPreview(draft: AdminDraft): DraftPreview {
           `Points/tick=${draft.pointsPerTick}, tick override=${draft.tickMinutesOverride ?? "inherit war default"}`,
           `Margins: take ${draft.takeMargin}, hold ${draft.holdMargin}, neutral minimum ${draft.neutralMinTotalPresence}, tied contested=${String(draft.contestedWhenTied)}`,
           `Storage mode=${draft.storageRequirementMode}, minimum total item count=${draft.minimumTotalItemCount}`,
-          `Public rule label=${draft.displayCopy.displayRuleLabel || "—"}`,
-          `Public rule description=${draft.displayCopy.displayRuleDescription || "—"}`,
+          `Public rule label=${draft.displayCopy.displayRuleLabel || "-"}`,
+          `Public rule description=${draft.displayCopy.displayRuleDescription || "-"}`,
           `Effective from: ${new Date(draft.effectiveFromMs).toLocaleString()}`,
           ...previewLinesForRuleSet(draft),
         ],
@@ -396,7 +396,7 @@ export function buildDraftPreview(draft: AdminDraft): DraftPreview {
         warnings: [
           "This changes the scheduled end time. The war must already have a scheduled end.",
         ],
-        contractCalls: [`${packageIdOrPlaceholder()}::admin::update_lineage_war_end_time`],
+        contractCalls: [`${packageIdOrPlaceholder()}::registry::update_war_end_time`],
       };
 
     case "cancel-war-end":
@@ -410,7 +410,7 @@ export function buildDraftPreview(draft: AdminDraft): DraftPreview {
         warnings: [
           "This removes the scheduled end time and re-enables the war. Scoring and config changes resume.",
         ],
-        contractCalls: [`${packageIdOrPlaceholder()}::admin::cancel_lineage_war_end`],
+        contractCalls: [`${packageIdOrPlaceholder()}::registry::cancel_war_end`],
       };
 
     case "set-win-margin":
@@ -673,7 +673,7 @@ export function buildTransactionForDraft(draft: AdminDraft, sender: string): Tra
 
     case "update-war-end-time":
       tx.moveCall({
-        target: `${packageId}::admin::update_lineage_war_end_time`,
+        target: `${packageId}::registry::update_war_end_time`,
         arguments: [
           tx.object(draft.registryId),
           tx.object(draft.adminCapId),
@@ -684,7 +684,7 @@ export function buildTransactionForDraft(draft: AdminDraft, sender: string): Tra
 
     case "cancel-war-end":
       tx.moveCall({
-        target: `${packageId}::admin::cancel_lineage_war_end`,
+        target: `${packageId}::registry::cancel_war_end`,
         arguments: [
           tx.object(draft.registryId),
           tx.object(draft.adminCapId),

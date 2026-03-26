@@ -1,349 +1,219 @@
-# Lineage War — Architecture Document
-
-**Document role:** Architecture + code navigation for agents working on the Lineage War system.
-**Priority of truth:** Deployed contract > this document > local Move source files.
-**Blockchain:** Sui (Move 2024 edition) · **Status:** Live on testnet
-
----
-
-## 1. What This Is
-
-The Lineage War is a competitive territorial control game within EVE Frontier. Player groups (tribes) fight for control of solar systems by deploying smart assemblies — network nodes, storage units, turrets, and gates. An off-chain verifier continuously reads on-chain state to score who controls what, and when the war ends, the final result is permanently recorded on chain as an immutable `WarResolution` object.
-
-This is the core competitive event system for EVE Frontier. Wars are admin-operated (created, configured, ended by a game operator) but scored autonomously by the verifier with full audit trail.
-
-**Core Stack:**
-- **On-chain:** Move modules in `lineage_war` package (registry, admin, config, rules, events, etc.)
-- **Off-chain:** Verifier (Node.js/TypeScript, single Railway service)
-- **Frontend:** Admin panel (React) + Scoreboard (React), both served as static files by the verifier
-- **Database:** PostgreSQL (tick ledger — authoritative scoring history)
-- **Contracts:** Move sources in `contracts/sources/` (self-contained, deployable independently)
+# Lineage War Architecture
 
-**Who Uses It:**
-1. Admin (React panel): creates wars, registers tribes, publishes phases, schedules end
-2. Verifier (background): discovers from chain events, scores each tick, auto-resolves
-3. Players (React scoreboard): watch live scores and system control states
-
----
-
-## 2. System Architecture
-
-```
-Admin Panel (React) ──wallet txs──> Sui Blockchain
-       │                                    │
-       │── POST /notify ──> Verifier ───────┤ (JSON-RPC: events, objects)
-                               │            │ (GraphQL: assembly ownership)
-                               │
-                               ├── PostgreSQL (tick ledger)
-                               │
-                               └── latest.json ──> Scoreboard (React)
-```
-
-**Verifier** is the center. Single Node.js process on Railway that:
-- Discovers war config from chain events (JSON-RPC)
-- Queries location events to find assemblies (GraphQL or JSON-RPC)
-- Resolves assembly ownership via 3-batch GraphQL pipeline
-- Scores each tick and commits to PostgreSQL
-- Writes `latest.json` atomically (tmp+rename) for the scoreboard
-- Auto-resolves on chain when `ended_at_ms` is reached (JSON-RPC)
-- Serves admin panel at `/admin/`, scoreboard at `/`, HTTP API at `/status` and `/notify`
-- `POST /notify` wakes the verifier to re-discover war config immediately (admin panel calls this after creating a war or publishing config)
-- **Folder structure:** Admin at `admin/src/`, Scoreboard at `scoreboard/src/`, Verifier at `verifier/src/`, API at `api/`, Contracts at `contracts/sources/`
-
----
-
-## 3. Principles
-
-1. **Cumulative Scoring** — Scores never recalculate. Phase 2 adds to Phase 1's totals. Ledger is append-only.
-2. **Event-Driven Discovery** — Verifier discovers everything from chain events. Zero manual config besides env vars.
-3. **Ledger Durability** — PostgreSQL is authoritative history. Upsert semantics keep one durable row per tick key, including recomputed current ticks and degraded carry-forward ticks.
-4. **Atomic Outputs** — `latest.json` written via tmp+rename [artifact-output.ts::atomicWriteFile()]. Scoreboard never reads a partial file.
-5. **Phase Additivity** — New phases add systems or change tick rates. Removed systems stop scoring but keep history.
-6. **Source Priority** — Deployed contract > this document > local Move source.
-
----
-
-## 4. On-Chain Objects [Concept]
-
-| Object | Type | Created By | Purpose |
-|--------|------|-----------|---------|
-| `WarRegistry` | shared | `admin::create_lineage_war` | War metadata: tribes, resolved flag, ended_at_ms, win_margin. `source_of_truth_mode` is stored but currently all wars use mode 2 (verifier required). |
-| `WarAdminCap` | owned | `admin::create_lineage_war` | Admin authorization (transferred to admin wallet) |
-| `TribeKey` | dynamic field | `admin::register_tribe` | Per-tribe registration on registry |
-| `WarConfigVersion` | shared | `config::publish_war_config` | Tick rate defaults, scoring defaults |
-| `PhaseConfig` | shared | `config::publish_phase_config` | Phase boundaries, tick rate override, active systems |
-| `SystemConfigVersion` | shared | `config::publish_system_config_version` | Per-system: points, margins, assembly rules |
-| `WarResolution` | shared | `registry::resolve_war` | Final: tribe scores, victor, outcome (victory/draw) |
-| `WinMarginRecord` | shared | `admin::set_win_margin` | Historical win margin changes |
-
----
-
-## 5. On-Chain Entry Points
-
-### War Lifecycle
-
-- `admin::create_lineage_war(war_id, display_name, max_tribes, win_margin, source_mode)` → WarRegistry + WarAdminCap
-- `admin::register_tribe(registry, admin_cap, tribe_id, display_name)` → TribeKey on registry. Emits `TribeRegisteredEvent`.
-- `admin::end_war(registry, admin_cap, ended_at_ms, clock)` → Sets future end time
-- `admin::update_war_end_time(registry, admin_cap, ended_at_ms, clock)` → Changes end time
-- `admin::cancel_war_end(registry, admin_cap)` → Clears end time, war continues
-- `admin::set_win_margin(registry, admin_cap, win_margin)` → Updates margin, creates WinMarginRecord
-- `registry::resolve_war(registry, admin_cap, tribe_ids, scores, clock)` → Creates WarResolution, sets resolved=true
-
-### Configuration
-
-- `config::publish_phase_config(registry, admin_cap, ...)` → PhaseConfig. Called directly (Move `public fun`, no entry wrapper needed).
-- `config::publish_system_config_version(registry, admin_cap, ...)` → SystemConfigVersion per system
-- `config::publish_war_config(registry, admin_cap, ...)` → WarConfigVersion (tick rate, default margins)
-
-**Move `public fun` can be called directly in programmable transactions.** The admin panel composes these into batch transactions — no `admin.move` wrapper required.
-
-### Events the Verifier Listens To
-
-| Event | Emitted By | Discovered In |
-|-------|-----------|---------------|
-| `WarCreatedEvent` | create_lineage_war | discover-war-config.ts |
-| `TribeRegisteredEvent` | register_tribe | discover-war-config.ts |
-| `WarConfigPublishedEvent` | publish_war_config | discover-war-config.ts |
-| `PhaseConfigPublishedEvent` | publish_phase_config | discover-war-config.ts |
-| `SystemConfigPublishedEvent` | publish_system_config_version | discover-war-config.ts |
-
----
-
-## 6. Verifier Architecture
-
-### Module Map
-
-```
-verifier/src/
-├── main.ts                    — Entry: env setup, launches live-chain-loop
-├── live-chain-loop.ts         — Core: tick scheduling, war lifecycle, resolution
-├── discover-war-config.ts     — Discover war config from chain events (JSON-RPC)
-├── resolver.ts                — Per-tick scoring: presence → control state → points
-├── tick-planner.ts            — Plan which (system, tick) pairs to resolve
-├── tick-ledger.ts             — PostgreSQL: committed_ticks_v2 table
-├── registry-source.ts         — VerifierDataSource impl (orchestrates all sources)
-├── graphql-assembly-source.ts — 3-batch GraphQL: assembly → owner_cap → wallet → tribe
-├── fetch-location-events.ts   — LocationRevealedEvent queries
-├── location-event-query.ts    — Location event cursor management
-├── artifact-output.ts         — Atomic latest.json + audit artifacts
-├── frontend-output.ts         — Scoreboard payload builder
-├── on-chain-resolve.ts        — Submit resolve_war transaction (JSON-RPC)
-├── tribe-resolver.ts          — Tribe name resolution
-├── hash.ts                    — Canonical snapshot hashing
-├── config.ts                  — Config file parsing
-├── types.ts                   — All TypeScript interfaces
-├── system-display-config.ts   — System display name overrides
-├── assembly-discovery.ts      — Alternative assembly discovery
-├── chain-source.ts            — On-chain config reader
-├── tick-planner.ts            — Tick schedule computation
-└── (test/utility files)       — seeded-source, mock-source, live-simulator, etc.
-```
-
-### Transport Layer
-
-The verifier uses TWO protocols:
-- **JSON-RPC** (`SuiJsonRpcClient`): War discovery, event queries, registry reads, transaction submission
-- **GraphQL**: Assembly ownership resolution (3-batch pipeline), location events (when `LINEAGE_LOCATION_QUERY_MODE=graphql`)
-
-### War Discovery [discover-war-config.ts::discoverWarConfig()]
-
-1. Query `WarCreatedEvent` — find target war (highest ID among unresolved, or specific `LINEAGE_WAR_ID`)
-2. Read `WarRegistry` object — enabled, resolved, ended_at_ms, win_margin
-3. Query `TribeRegisteredEvent` — build `participatingTribeIds` list
-4. Query `WarConfigPublishedEvent` → extract WarConfigVersion IDs → read tick rate
-5. Query `PhaseConfigPublishedEvent` → extract PhaseConfig IDs
-6. Query `SystemConfigPublishedEvent` → extract SystemConfigVersion IDs + war system IDs
-
-Returns `DiscoveredWarConfig` with everything the verifier needs. **Zero manual configuration.**
-
-### Tick Cycle [live-chain-loop.ts → resolver.ts]
-
-Every tick boundary (15/30/60 minutes):
-
-1. `refreshWarState()` — re-read registry for config changes, end time, resolved status
-2. If `now >= ended_at_ms` → run final tick + auto-resolve (see §7)
-3. Location refresh — query `LocationRevealedEvent` to find assemblies in war systems
-4. `buildTickPlan()` [tick-planner.ts] — determine which (system, tick) pairs need resolving
-5. Load committed ticks from PostgreSQL — skip already-committed (idempotent)
-6. For each new tick: `resolveTick()` [resolver.ts] →
-   a. `getEffectiveSystemConfig()` — merge war + phase + system config (system wins, fallback to war default via `||`)
-   b. `getCandidateAssemblies()` — 3-batch GraphQL ownership pipeline
-   c. `evaluateAssembly()` — filter by family, type, storage rules
-   d. `buildPresenceRows()` — group qualifying assemblies by tribe, sum weighted presence
-   e. `resolveSystem()` — determine NEUTRAL / CONTESTED / CONTROLLED + award points
-7. `commitTicks()` [tick-ledger.ts] — upsert to PostgreSQL so current-tick recomputations and degraded carry-forward ticks persist durably
-8. `buildScoreboardPayload()` [frontend-output.ts] — cumulative scores, chart data
-9. `writeVerifierArtifacts()` [artifact-output.ts] — atomic write latest.json + audit artifacts
-
-### Scoring Logic [resolver.ts] [Implementation Anchor]
-
-**Config Precedence:** `systemConfig > phaseConfig > warConfig`. Uses `||` (falsy fallback): a system value of 0 or null falls back to war default. [resolver.ts::getEffectiveSystemConfig()]
-
-**System States:**
-- **NEUTRAL**: No tribe meets `neutralMinTotalPresence`, or no assemblies. No points.
-- **CONTESTED**: Top tribe's lead < required margin. No points.
-- **CONTROLLED**: Top tribe's lead ≥ required margin → gets `pointsPerTick`.
+Audience: engineers, operators, and Move experts reviewing the live Lineage War stack.
 
-**Margin Logic:**
-- If top tribe IS current controller: needs `holdMargin` (easier to keep)
-- If top tribe is NOT current controller: needs `takeMargin` (harder to take)
-- [resolver.ts::resolveSystem(), lines 220-289]
+Priority of truth: deployed contract and current code on `main` win over this document. This document is meant to stay smaller than the codebase and only cover the runtime surfaces that matter for understanding, operating, and extending the live system.
 
-**Assembly Evaluation (two paths):**
-1. **Explicit rules** (`cfg.assemblyRules.length > 0`): Match each assembly against AssemblyRule objects (family + type + storage). Each rule has `presenceWeight`.
-2. **Legacy filtering** (no explicit rules): Check family → type → storage type → storage requirements. Weight = 1.
+## 1. What the system is
 
-**Storage Requirement Modes:**
+Lineage War is a territorial-control event system on Sui for EVE Frontier. Operators create a war, register tribes, publish phases and per-system rules, and schedule an end time. The verifier discovers that war from chain events, scores systems tick by tick off chain, publishes auditable public artifacts, and submits the final `resolve_war` transaction when the war ends.
 
-| Mode | Semantics |
-|------|-----------|
-| `NONE` | Always passes |
-| `NON_EMPTY` | Any inventory item with quantity > 0 |
-| `SPECIFIC_ITEMS` | Must hold at least one of `requiredItemTypeIds` |
-| `MINIMUM_TOTAL_QUANTITY` | Total inventory ≥ `minimumTotalItemCount` |
+This repository includes the full operational stack:
 
-### Ownership Pipeline [graphql-assembly-source.ts] [Implementation Anchor]
+- Move contracts in `contracts/`
+- the live verifier in `verifier/`
+- the operator admin UI in `admin/`
+- the public scoreboard in `scoreboard/`
+- the activation API in `api/`
+- the pre-war waiting-page UI in `prehype/`
 
-3 batched GraphQL queries per tick (batch size 20):
-1. **Assembly objects** → JSON state + `owner_cap_id`
-2. **OwnerCap objects** → wallet address (AddressOwner)
-3. **Character objects** at wallet → `tribe_id`
+## 2. Live topology
 
-The verifier retries GraphQL ownership resolution up to five times with bounded backoff. If GraphQL is still unavailable, it freezes the entire tick and persists a degraded result: each system carries forward the last resolved snapshot state, and if no prior resolved state exists the verifier emits an explicit degraded placeholder with no points. Published artifacts mark these ticks with `tickStatus = "degraded_frozen"` plus `degradedReason` and `carriedForwardFromTickMs` when applicable. Degraded historical ticks are not automatically rewritten later.
+The live system has four important relationships:
 
-**Tribe filtering:** After ownership resolution, `TribeResolver` checks each assembly's tribe against `participatingTribeIds` (discovered from `TribeRegisteredEvent`). Non-registered tribes return `null` → assembly excluded from presence rows → cannot influence scoring. [tribe-resolver.ts:74]
+1. The admin UI signs wallet transactions directly against the deployed `lineage_war` package on Sui.
+2. The admin UI also uses verifier HTTP endpoints to trigger rediscovery and publish editorial display copy.
+3. The verifier reads chain state, ownership data, and prior committed ticks, then writes the public artifact set consumed by the scoreboard.
+4. The activation API and prehype UI are adjacent repo surfaces, but they are not part of the live war-scoring loop.
 
-### Tick Ledger [tick-ledger.ts]
+See [architecture.mermaid](./architecture.mermaid) for the top-level diagram.
 
-```sql
-CREATE TABLE IF NOT EXISTS committed_ticks_v2 (
-  war_id INTEGER NOT NULL,
-  system_id INTEGER NOT NULL,
-  tick_timestamp_ms BIGINT NOT NULL,
-  resolved JSONB NOT NULL,
-  committed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  PRIMARY KEY (war_id, system_id, tick_timestamp_ms)
-);
-```
+## 3. Core runtime flows
 
-`INSERT ... ON CONFLICT DO UPDATE` keeps one durable row per `(war_id, system_id, tick_timestamp_ms)`. Restart re-resolution can correct the current tick in place, and degraded carry-forward ticks are persisted just like live-resolved ticks.
+### Admin publish flow
 
----
+1. The operator creates or updates war state from the admin panel.
+2. Those actions are wallet-signed transactions against Sui.
+3. After publish, the admin UI calls `POST /notify` so the verifier re-discovers chain state immediately. `POST /notify` is a trigger boundary, not a publish API and not an authoritative write surface by itself.
+4. If the draft includes public display copy, the admin UI also calls `POST /editorial-display`.
+5. The same editorial surface can be read back with `GET /editorial-display?warId=<id>`.
 
-## 7. War Resolution [live-chain-loop.ts, lines 415-560]
+### Verifier scoring flow
 
-When `now >= ended_at_ms`:
+1. `verifier/src/live-chain-loop.ts` discovers the preferred unresolved war from events unless `LINEAGE_WAR_ID` forces a specific war.
+2. On each tick boundary, the verifier refreshes registry state, resolves active systems, and upserts the durable tick ledger in PostgreSQL.
+3. It builds the public envelope, resolves current system display copy from runtime editorial entries plus legacy fallback config, and atomically writes the public artifact set.
+4. The scoreboard polls `/verifier/latest.json` and renders the live state from that envelope.
 
-1. Run final tick covering all ticks up to end time (no ticks scored after)
-2. Sum scores per registered tribe from all resolved ticks
-3. Filter to `participatingTribeIds` only (non-registered tribes excluded)
-4. Determine outcome: if top tribe margin ≥ `win_margin` → VICTORY (winner_tribe_id set), else DRAW (winner_tribe_id = None)
-5. Write `pending_resolution` block to `latest.json` — scoreboard immediately shows "war ended, awaiting on-chain confirmation" with final scores visible
-6. `submitResolveWarWithRetry()` [on-chain-resolve.ts] — retries ONLY the on-chain `resolve_war` transaction submission (not scoring or GraphQL). 3 attempts with exponential backoff (2s, 4s, 8s) via JSON-RPC.
-7. **On success:** write `resolution.json` atomically (tmp+rename), patch `latest.json` with full resolution block, remove `pending_resolution`
-8. **On failure (all retries exhausted):** write `pending_resolution.status = "retrying"` to latest.json. War continues — next tick cycle re-enters resolution. The verifier keeps trying every cycle until it succeeds. No war is ever cancelled due to a network hiccup.
+### War-end flow
 
-All file writes in the resolution path use atomic tmp+rename pattern.
+1. When `now >= ended_at_ms`, the verifier resolves the final tick window and computes the score margin.
+2. If the top tribe clears `win_margin`, the outcome is a victory. Otherwise the outcome is a draw.
+3. The verifier writes a `pending_resolution` block into `latest.json`, retries the on-chain `resolve_war` transaction, and writes `resolution.json` on success.
+4. A sibling `public-war-state.json` marker lets the verifier keep the last resolved war visible when there is no unresolved war to score.
+5. The activation APIs are adjacent operational services for the pre-war flow; they are not part of the verifier's scoring or artifact contract.
 
----
+## 4. Verifier HTTP and artifact surfaces
 
-## 8. Admin Panel [admin/src/]
+### Runtime HTTP endpoints
 
-React app served at `/admin/` by the verifier. Wallet-connected (Sui wallet adapter).
+These live in `verifier/src/live-chain-loop.ts`.
 
-### Screens
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/status` | `GET` | Current runtime status, current war, tick cadence, notify hint, and diagnostics |
+| `/notify` | `POST` | Trusted operator trigger for immediate re-discovery after admin changes |
+| `/editorial-display?warId=<id>` | `GET` | Trusted operator readback for stored editorial display entries |
+| `/editorial-display` | `POST` | Trusted operator write surface for public display names and public rule text |
+| `/verifier/*` | `GET` | Serve public artifact files such as `latest.json` and audit files |
+| `/admin/*` | `GET` | Serve the built admin bundle when `admin/dist` exists |
+| `/` | `GET` | Serve the built scoreboard bundle when `scoreboard/dist` exists |
 
-| Screen | File | Purpose |
-|--------|------|---------|
-| War Setup | `screens/WarSetupScreen.tsx` | Create war (ID, name, margin, max tribes) |
-| Overview | `screens/WarOverview.tsx` | View war state, register tribes |
-| Phases | `screens/PhaseManager.tsx` | Configure + publish phases |
-| System Config | `screens/SystemConfigEditor.tsx` | Per-system scoring rules |
-| Debug | `screens/DebugScreen.tsx` | End war, update end time, cancel end, set win margin |
-| Preview | `screens/PreviewScreen.tsx` | Preview transactions before signing |
-| Snapshot | `screens/SnapshotScreen.tsx` | View chain state snapshots |
-| Schedule | `screens/ScheduleScreen.tsx` | War scheduling |
+### Public artifacts
 
-### Transaction API [lib/transactions.ts]
+By default the verifier writes the main envelope to `runtime/verifier/latest.json`. Related files are written next to it.
 
-Unified dispatcher: `buildTransactionForDraft(draft)` builds a `Transaction` from a draft object. `validateDraft(draft)` validates before building.
+| Artifact | Default location | Notes |
+| --- | --- | --- |
+| Live envelope | `runtime/verifier/latest.json` | Public scoreboard payload plus config, commitments, snapshots, tick plan, system display configs, and audit summary |
+| Resolution artifact | `runtime/verifier/resolution.json` | Final resolved winner or draw outcome after on-chain resolution succeeds |
+| Sticky public-war marker | `runtime/verifier/public-war-state.json` | Tracks the last resolved public war so the public site does not snap back to an empty state |
+| Audit index | `runtime/verifier/audit/latest/index.json` | Tick inventory for the current envelope stem |
+| Tick artifacts | `runtime/verifier/audit/latest/ticks/<tick>.json` | Per-tick audit artifacts with snapshots, commitments, presence rows, assemblies, and editorial display resolution |
+| Tick receipts | `runtime/verifier/audit/latest/receipts/<tick>.json` | Receipt path targets referenced by audit artifacts |
 
-13 transaction kinds (kebab-case): `create-war`, `register-tribe`, `publish-defaults` (war config), `upsert-system-config`, `batch-phase-config`, `schedule-system-change`, `end-war`, `update-war-end-time`, `cancel-war-end`, `set-win-margin`, `toggle-war` (enable/disable), `resolve-war`, `commit-snapshot`.
+### Internal verifier runtime stores
 
-After war creation, the admin panel calls `POST /notify` on the verifier to trigger immediate re-discovery.
+These are implementation details behind the verifier API and artifact writer, not public read-model contracts.
 
----
+| Store | Default location | Notes |
+| --- | --- | --- |
+| Editorial display persistence | `runtime/verifier/editorial-display.json` | Internal runtime store behind `GET/POST /editorial-display` for system names and rule text |
 
-## 9. Scoreboard [scoreboard/src/]
+### What the scoreboard consumes
 
-React app served at `/` by the verifier. Reads `latest.json` via polling.
+The scoreboard defaults to `/verifier/latest.json` unless build-time env overrides are used. The envelope includes:
 
-**Data source:** Verifier writes `latest.json` containing: `scoreboard` (tribe scores, chart data, system states), `snapshots`, `commitments`, `tickPlan`, `systemDisplayConfigs`, `audit`.
+- `config`
+- `tickPlan`
+- `commitments`
+- `snapshots`
+- `scoreboard`
+- `systemDisplayConfigs`
+- `audit`
 
-**State conversion:** Verifier uses strings (`"NEUTRAL"`, `"CONTESTED"`, `"CONTROLLED"`). Frontend converts to numbers (0, 1, 2) via `stateToNumber()` [frontend-output.ts].
+The public UI uses `systemDisplayConfigs[].publicRuleText` to render the rule column for active systems. It does not read `editorial-display.json` directly.
+
+## 5. On-chain surface
 
-**Key war components:** `WarScoreboard`, `WarPhasePanel`, `SystemControlPanel`, `ControlFeed`, `WarEventLog`, `WarTimeline`, `WarSystemMap`.
+### Core objects
 
-⚠️ **2-TRIBE DESIGN:** The scoreboard frontend is currently designed and tested for 2-tribe wars only. The on-chain contracts and verifier support N tribes — the frontend needs work to handle 3+ tribes well (color assignment, layout, chart scaling). Contributions welcome.
+| Object | Purpose |
+| --- | --- |
+| `WarRegistry` | Shared war metadata including tribes, end time, resolved flag, and win margin |
+| `WarAdminCap` | Owned admin authority for mutation and final resolution |
+| `WarConfigVersion` | Shared defaults for scoring and tick cadence |
+| `PhaseConfig` | Shared phase boundaries, active systems, and optional tick override |
+| `SystemConfigVersion` | Shared per-system scoring and assembly-rule config |
+| `WarResolution` | Final on-chain outcome and score record |
 
----
+### Concrete Move functions used by the live stack
 
-## 10. Pre-Hype System [prehype/]
+The admin UI assembles transactions against both convenience functions in `admin.move` and lower-level functions in `registry.move` and `config.move`. The table below names concrete public Move functions that exist in `contracts/sources/`.
 
-The pre-war marketing/activation experience lives in `prehype/` within this repo. It handles tribe registration and countdown before scoring begins.
+| Move function | Purpose |
+| --- | --- |
+| `admin::create_lineage_war` | Create a new war registry and admin cap |
+| `admin::register_tribe` | Register a tribe for a war |
+| `admin::end_lineage_war` | Schedule the first war end time |
+| `registry::update_war_end_time` | Move an already scheduled war end |
+| `registry::cancel_war_end` | Clear an already scheduled war end |
+| `config::publish_war_config_version` | Publish default scoring and tick config |
+| `config::publish_phase_config` | Publish a phase with active systems and timing |
+| `config::publish_system_config_version` | Publish per-system scoring and assembly rules |
+| `registry::set_win_margin` | Update the required final score margin |
+| `registry::resolve_war` | Submit the final result on chain |
 
-- `api/` — Activation API (Node.js/Hono + PostgreSQL). Manages 3-phase pipeline: `pre_tribes` → `one_tribe_ready` → `both_tribes_ready`. Auth via `ADMIN_SECRET` env var + `X-Admin-Key` header. Self-contained, no dependency on the verifier.
-- `WaitingPage.tsx` — Pre-hype countdown UI with soul record intake
-- `components/waiting/` — CaptainDossierPanel, HeroViewport, SoulRecordIntake
+The verifier discovers wars and config versions from emitted events rather than from hand-maintained config.
 
----
+## 6. Code map
 
-## 11. Deployment
+### Verifier
 
-Single Railway service: the verifier process. Serves admin panel + scoreboard as static files.
+The live runtime entrypoint is `verifier/src/live-chain-loop.ts`. It owns:
 
-**Folder Structure:** The `lineage-war/` directory is self-contained and can be extracted as a standalone repository. Contains all sources for on-chain contracts (`contracts/`), verifier (`verifier/`), admin panel (`admin/`), scoreboard (`scoreboard/`), and API layer (`api/`).
+- war discovery and polling
+- runtime HTTP endpoints
+- tick scheduling and resolution
+- sticky ended-war hydration
+- final on-chain resolution
 
-### Environment Variables
+Supporting modules worth reading:
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `LINEAGE_PACKAGE_ID` | ✓ | Deployed contract package ID |
-| `LINEAGE_SUI_RPC` | | Sui JSON-RPC endpoint (default: testnet fullnode) |
-| `LINEAGE_SUI_GRAPHQL_URL` | | Sui GraphQL endpoint (for ownership resolution) |
-| `LINEAGE_WORLD_PACKAGE_ID` | ✓ | For LocationRevealedEvent type |
-| `DATABASE_PUBLIC_URL` | ✓ | PostgreSQL connection string |
-| `LINEAGE_ADMIN_PRIVATE_KEY` | ✓ | Ed25519 key for auto-resolution |
-| `LINEAGE_WAR_ID` | | Force specific war (default: auto-discover highest unresolved) |
-| `LINEAGE_OUTPUT_PATH` | | Output path (default: `../frontend/score/public/verifier/latest.json`) |
-| `LINEAGE_MAX_HISTORY_TICKS` | | Max historical ticks to catch up (default: 48) |
-| `LINEAGE_LOCATION_QUERY_MODE` | | `auto`, `graphql`, `rpc`, or `off` (default: auto) |
-| `LINEAGE_VERIFIER_PORT` / `PORT` | | HTTP port (default: 3001) |
+- `verifier/src/discover-war-config.ts` - discover wars, tribes, and config object IDs from chain events
+- `verifier/src/resolver.ts` - resolve control state and points for one system tick
+- `verifier/src/tick-ledger.ts` - PostgreSQL upsert ledger
+- `verifier/src/artifact-output.ts` - atomic public artifacts and audit writing
+- `verifier/src/editorial-display-store.ts` - runtime editorial display persistence and resolution
+- `verifier/src/frontend-output.ts` - build the public scoreboard payload
+- `verifier/src/on-chain-resolve.ts` - submit the final `resolve_war` transaction
 
----
+### Admin
 
-## 12. Failure Modes
+Key files:
 
-| Scenario | What Happens | Recovery |
-|----------|-------------|---------|
-| Verifier crashes mid-tick | Uncommitted ticks lost. On restart, the verifier re-resolves from ledger + live state. Ledger upserts keep current-tick corrections durable instead of dropping them. | Automatic on restart |
-| GraphQL down | Ownership resolution retries up to five times with backoff. If GraphQL still fails, the whole tick is frozen and persisted as degraded by carrying forward the last resolved state per system; if no prior state exists, the verifier emits an explicit degraded placeholder with no points. | Future ticks retry live resolution automatically, but degraded historical ticks stay as recorded unless rewritten manually |
-| JSON-RPC down | War discovery fails, `refreshWarState` fails. Resolution retries 3× with backoff; if all fail, war continues and retries next cycle. War never stops due to resolution failure. | Automatic retry every cycle until success |
-| PostgreSQL down | `commitTicks()` throws. Tick results lost. Verifier crashes. | Restart after DB recovery; ticks re-resolved |
-| Admin publishes bad config | Verifier picks up new config on next cycle. Historical scores preserved. | Publish corrected config |
-| Two verifier instances | Both resolve the same ticks. The ledger keeps one row per tick key via upsert, and `latest.json` remains last-write-wins. | Run single instance only |
+- `admin/src/lib/transactions.ts` - transaction assembly and validation
+- `admin/src/lib/verifier-sync.ts` - `POST /notify`, `GET/POST /editorial-display`, and editorial payload building
+- `admin/src/screens/PhaseManager.tsx` - phase publishing and display-copy editing
+- `admin/src/screens/PreviewScreen.tsx` - transaction preview and publish flow
 
-### Quick Diagnostics
+### Scoreboard
 
-**"War not scoring"** → Check: `GET /status` → is `state` = `running`? If `discovering`, verifier hasn't found configs. Check `SystemConfigPublishedEvent` exists for this war. If `waiting`, no unresolved war found.
+Key files:
 
-**"Scores look wrong"** → Check audit artifacts: `verifier/audit/live/ticks/{tickTimestampMs}.json`. Each tick artifact has full `presenceRows` (per-tribe assembly counts), `resolution` (state + margins), and `candidateAssemblies`. Compare assembly counts against what you expect.
+- `scoreboard/src/pages/WarPage.tsx` - live war page
+- `scoreboard/src/components/war/SystemControlPanel.tsx` - public system list and rule-text rendering
+- `scoreboard/src/lib/constants.ts` - live snapshot URL and build-time external-link config
 
-**"Resolution didn't happen"** → Check verifier logs for `"Failed to submit resolve_war transaction"`. Common cause: `LINEAGE_ADMIN_PRIVATE_KEY` doesn't match the wallet that owns `WarAdminCap`. Verify with `discoverAdminCapId()` in `on-chain-resolve.ts`.
+## 7. Deployment and environment
 
-**"Config change not picked up"** → Verifier checks for new configs every tick cycle via `refreshWarState()`. If you just published, `POST /notify` triggers immediate re-check.
+### Verifier runtime env
 
----
+These are the runtime env vars most operators need to understand:
 
-**Trust this document's architecture. Trust the deployed contract for implementation. When they diverge, deployed code wins.**
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `LINEAGE_PACKAGE_ID` | Yes | Deployed `lineage_war` package ID |
+| `LINEAGE_SUI_RPC` | Yes in practice | JSON-RPC endpoint; defaults to the Sui testnet fullnode if unset |
+| `LINEAGE_SUI_GRAPHQL_URL` | No | GraphQL endpoint used for ownership resolution |
+| `LINEAGE_WORLD_PACKAGE_ID` | Yes for live discovery | Used to derive the location event type |
+| `DATABASE_PUBLIC_URL` | Yes | PostgreSQL connection string for the tick ledger |
+| `LINEAGE_ADMIN_PRIVATE_KEY` | Required for auto-resolution | Wallet key for the owner of the active `WarAdminCap` |
+| `LINEAGE_WAR_ID` | No | Force a specific war instead of auto-discovery |
+| `LINEAGE_OUTPUT_PATH` | No | Defaults to `runtime/verifier/latest.json` |
+| `LINEAGE_EDITORIAL_DISPLAY_PATH` | No | Defaults to a sibling `editorial-display.json` next to the output path |
+| `LINEAGE_MAX_HISTORY_TICKS` | No | Catch-up window for missed ticks; defaults to `48` |
+| `LINEAGE_LOCATION_QUERY_MODE` | No | `auto`, `graphql`, `rpc`, or `off` |
+| `LINEAGE_VERIFIER_PORT` or `PORT` | No | HTTP port; defaults to `3001` |
+
+### Frontend build-time env
+
+| Workspace | Variable | Purpose |
+| --- | --- | --- |
+| `scoreboard/` | `VITE_PREDICTION_MARKET_URL` | Prediction-market CTA destination |
+| `scoreboard/` | `VITE_AIRDROP_URL` | Airdrop CTA destination |
+| `scoreboard/` | `VITE_LIVE_VERIFIER_SNAPSHOT_URL` | Override `/verifier/latest.json` if needed |
+| `admin/` | `VITE_VERIFIER_URL` | Override the verifier base URL for notify and editorial-display calls |
+
+## 8. Known limitations
+
+These are current truths, not hidden backlog:
+
+- The public scoreboard is still effectively a 2-tribe UI even though the contracts and verifier support N tribes.
+- The verifier is operated as a single active writer for public artifacts. PostgreSQL protects tick keys, but artifact files are still last-write-wins.
+- Degraded frozen ticks remain part of historical truth rather than being silently rewritten when upstream GraphQL recovers later.
+- If the final score margin does not clear `win_margin`, the war ends in a draw.
+- The activation API currently exists in both `api/` and `prehype/api/` with mirrored code.
+- `/editorial-display` currently assumes trusted internal callers. Auth and durability hardening remain open work.
+
+If this document and current code diverge, trust current code and update the document rather than smoothing over the mismatch.

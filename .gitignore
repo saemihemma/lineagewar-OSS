@@ -13,6 +13,7 @@ verifier/out/
 verifier/.tmp-*.json
 verifier/tmp_*
 verifier/tmp*
+.playwright-cli/
 *.tsbuildinfo
 
 # TODO: War 14 is still an ended zero-tribe zombie on chain. The verifier now skips it during auto-discovery, but the chain object itself still needs a separate cleanup path.
