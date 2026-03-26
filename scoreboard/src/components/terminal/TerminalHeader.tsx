@@ -68,27 +68,16 @@ export default function TerminalHeader({
 
   return (
     <motion.header
+      className="terminal-header"
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "0.9rem",
-        padding: "0.95rem 1.25rem",
-        borderBottom: "1px solid var(--border-panel)",
-        background: "var(--bg-panel)",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-      }}
     >
       {/* Left: title + meta */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap", flex: "1 1 24rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+      <div className="terminal-header__primary">
+        <div className="terminal-header__title-row">
           <h1
+            className="terminal-header__title"
             style={{
               fontFamily: "IBM Plex Mono",
               fontSize: "0.7rem",
@@ -108,6 +97,7 @@ export default function TerminalHeader({
         {meta.map((m) => (
           <div
             key={m.label}
+            className="terminal-header__meta-item"
             style={{
               display: "flex",
               alignItems: "center",
@@ -125,7 +115,7 @@ export default function TerminalHeader({
       </div>
 
       {/* Right slot */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+      <div className="terminal-header__right">
         {statusPosition === "right" ? statusBadge : null}
         {right}
       </div>

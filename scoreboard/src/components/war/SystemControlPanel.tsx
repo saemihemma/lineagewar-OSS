@@ -76,108 +76,111 @@ export default function SystemControlPanel({
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: COL,
-        columnGap: "10px",
-        fontFamily: "IBM Plex Mono",
-        fontSize: "0.75rem",
-        alignItems: "center",
-      }}
-    >
-      <div style={{ display: "contents" }}>
-        <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }} />
-        <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>SYSTEM</span>
-        <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>PTS</span>
-        <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>CONTROL</span>
-        <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>STREAK</span>
-        <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>RULE</span>
-      </div>
+    <div className="system-control-panel">
+      <div
+        className="system-control-panel__grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: COL,
+          columnGap: "10px",
+          fontFamily: "IBM Plex Mono",
+          fontSize: "0.75rem",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ display: "contents" }}>
+          <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }} />
+          <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>SYSTEM</span>
+          <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>PTS</span>
+          <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>CONTROL</span>
+          <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>STREAK</span>
+          <span style={{ ...headerPad, color: "var(--text-dim)", letterSpacing: "0.05em", fontSize: "0.7rem" }}>RULE</span>
+        </div>
 
-      <span style={separator("var(--border-panel)")} />
+        <span style={separator("var(--border-panel)")} />
 
-      {systems.map((system) => {
-        const dot = dotColor(system.state, system.controller, tribeScores);
-        const label = stateLabel(system.state, system.controller, tribeScores);
-        const streak = holdStreaks.get(String(system.id)) ?? 0;
-        const ruleText = configById.get(String(system.id))?.publicRuleText?.trim() || "—";
+        {systems.map((system) => {
+          const dot = dotColor(system.state, system.controller, tribeScores);
+          const label = stateLabel(system.state, system.controller, tribeScores);
+          const streak = holdStreaks.get(String(system.id)) ?? 0;
+          const ruleText = configById.get(String(system.id))?.publicRuleText?.trim() || "-";
 
-        return (
-          <div key={system.id} style={{ display: "contents" }}>
-            <span style={cellPad}>
+          return (
+            <div key={system.id} style={{ display: "contents" }}>
+              <span style={cellPad}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: dot,
+                  }}
+                />
+              </span>
+
               <span
                 style={{
-                  display: "inline-block",
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: dot,
+                  ...cellPad,
+                  color: "var(--text-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  letterSpacing: "0.06em",
+                  maxWidth: "18ch",
                 }}
-              />
-            </span>
+              >
+                {system.name.toUpperCase()}
+              </span>
 
-            <span
-              style={{
-                ...cellPad,
-                color: "var(--text-muted)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.06em",
-                maxWidth: "18ch",
-              }}
-            >
-              {system.name.toUpperCase()}
-            </span>
+              <span
+                style={{
+                  ...cellPad,
+                  color: system.state === 2 ? label.color : "var(--text-dim)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {system.pointsPerTick > 0 ? String(system.pointsPerTick) : "-"}
+              </span>
 
-            <span
-              style={{
-                ...cellPad,
-                color: system.state === 2 ? label.color : "var(--text-dim)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {system.pointsPerTick > 0 ? String(system.pointsPerTick) : "—"}
-            </span>
+              <span
+                style={{
+                  ...cellPad,
+                  color: label.color,
+                  letterSpacing: "0.05em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label.text}
+              </span>
 
-            <span
-              style={{
-                ...cellPad,
-                color: label.color,
-                letterSpacing: "0.05em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {label.text}
-            </span>
+              <span
+                style={{
+                  ...cellPad,
+                  color: streak > 0 ? "var(--text-muted)" : "var(--text-dim)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {streak > 0 ? `x${streak}` : "-"}
+              </span>
 
-            <span
-              style={{
-                ...cellPad,
-                color: streak > 0 ? "var(--text-muted)" : "var(--text-dim)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {streak > 0 ? `×${streak}` : "—"}
-            </span>
+              <span
+                style={{
+                  ...cellPad,
+                  color: "var(--text-dim)",
+                  whiteSpace: "normal",
+                  lineHeight: 1.4,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {ruleText}
+              </span>
 
-            <span
-              style={{
-                ...cellPad,
-                color: "var(--text-dim)",
-                whiteSpace: "normal",
-                lineHeight: 1.4,
-                letterSpacing: "0.04em",
-              }}
-            >
-              {ruleText}
-            </span>
-
-            <span style={separator("var(--border-inactive)")} />
-          </div>
-        );
-      })}
+              <span style={separator("var(--border-inactive)")} />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -24,17 +24,9 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
     systems.filter((s) => s.state === 2 && s.controller === id).length;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className="war-scoreboard">
       {/* Two tribe cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1px",
-          background: "var(--border-panel)",
-          flex: 1,
-        }}
-      >
+      <div className="war-scoreboard__cards">
         {[a, b].map((tribe) => {
           const isLeading = leader?.id === tribe.id;
           const color = tribe.color;
@@ -43,6 +35,7 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
           return (
             <motion.div
               key={tribe.id}
+              className="war-scoreboard__card"
               variants={cardVariants}
               initial="hidden"
               animate="visible"
@@ -57,6 +50,7 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
             >
               {/* Header row: name + status badge */}
               <div
+                className="war-scoreboard__card-header"
                 style={{
                   display: "flex",
                   alignItems: "flex-start",

@@ -203,7 +203,7 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
     () =>
       useMock
         ? [
-            { label: "PHASE", value: MOCK_PHASE.name.split("—")[0].trim() },
+            { label: "PHASE", value: MOCK_PHASE.name.split(/\s+\u2014\s+/u)[0].trim() },
             { label: "TICK", value: String(MOCK_PHASE.tick) },
             {
               label: "SYSTEMS",
@@ -233,15 +233,7 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
 
   return (
     <TerminalScreen>
-      <div
-        style={{
-          position: "relative",
-          height: "100dvh",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div className="war-page-shell">
         <TerminalHeader
           title={warName}
           meta={headerMeta}
@@ -260,106 +252,41 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
           right={headerRight}
         />
 
-        <div
-          style={{
-            position: "relative",
-            flex: 1,
-            minHeight: 0,
-            overflow: "hidden",
-          }}
-        >
+        <div className="war-page-body">
           <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "42%",
-              backgroundImage: "url(/corridorofsaddness.jpg)",
-              backgroundSize: "cover",
-              backgroundPosition: "center top",
-              filter: "grayscale(1) blur(2px)",
-              opacity: 0.06,
-              pointerEvents: "none",
-              zIndex: 0,
-              maskImage: "linear-gradient(to bottom, transparent 0%, black 40%)",
-              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 40%)",
-            }}
+            className="war-page-backdrop"
+            style={{ backgroundImage: "url(/corridorofsaddness.jpg)" }}
           />
 
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gridTemplateRows: "auto auto minmax(0, 1fr)",
-              gap: "1px",
-              background: "var(--border-panel)",
-              height: "100%",
-              minHeight: 0,
-            }}
-          >
+          <div className="war-page-grid">
             {warLifecycle === "ended_pending_resolution" && (
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  padding: "0.55rem 1rem",
-                  fontFamily: "IBM Plex Mono",
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.04em",
-                  color: "var(--yellow-dim)",
-                  background: "rgba(242,201,76,0.08)",
-                  borderBottom: "1px solid var(--border-panel)",
-                }}
-              >
-                WAR ENDED — FINAL RESOLUTION PENDING
+              <div className="war-page-banner war-page-banner--pending">
+                WAR ENDED - FINAL RESOLUTION PENDING
               </div>
             )}
 
             {warLifecycle === "resolved" && (
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  padding: "0.55rem 1rem",
-                  fontFamily: "IBM Plex Mono",
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.04em",
-                  color: "var(--mint)",
-                  background: "rgba(132,211,173,0.08)",
-                  borderBottom: "1px solid var(--border-panel)",
-                }}
-              >
-                WAR ENDED — FINAL RESOLUTION PUBLISHED
+              <div className="war-page-banner war-page-banner--resolved">
+                WAR ENDED - FINAL RESOLUTION PUBLISHED
               </div>
             )}
 
             {warLifecycle === "running" && tickStatus === "degraded_frozen" && (
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  padding: "0.55rem 1rem",
-                  fontFamily: "IBM Plex Mono",
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.04em",
-                  color: "var(--yellow-dim)",
-                  background: "rgba(242,201,76,0.08)",
-                  borderBottom: "1px solid var(--border-panel)",
-                }}
-              >
-                DEGRADED TICK: GraphQL ownership resolution failed, so the verifier carried forward the last known state.
+              <div className="war-page-banner war-page-banner--degraded">
+                DEGRADED TICK: GraphQL ownership resolution failed, so the verifier carried forward
+                the last known state.
                 {degradedReason ? ` ${degradedReason}` : ""}
               </div>
             )}
 
             <motion.div
+              className="war-page-panel war-page-panel--scoreboard"
               custom={0}
               variants={panelVariants}
               initial="hidden"
               animate="visible"
-              style={{ background: "var(--bg-terminal)", height: "100%", minHeight: 0 }}
             >
-              <TerminalPanel accent="default" style={{ height: "100%", minHeight: 0 }}>
+              <TerminalPanel accent="default" className="war-page-terminal-panel">
                 {tribeScores.length >= 2 ? (
                   <WarScoreboard tribeScores={tribeScores} systems={rawSystems} />
                 ) : (
@@ -377,13 +304,18 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
             </motion.div>
 
             <motion.div
+              className="war-page-panel war-page-panel--history"
               custom={1}
               variants={panelVariants}
               initial="hidden"
               animate="visible"
-              style={{ background: "var(--bg-terminal)", gridRow: "1 / 3", height: "100%", minHeight: 0 }}
             >
-              <TerminalPanel title="SCORE HISTORY" accent="default" noPadBottom style={{ height: "100%", minHeight: 0 }}>
+              <TerminalPanel
+                title="SCORE HISTORY"
+                accent="default"
+                noPadBottom
+                className="war-page-terminal-panel war-page-terminal-panel--history"
+              >
                 {chartData.length > 0 ? (
                   <WarTimeline chartData={chartData} chartSeries={chartSeries} />
                 ) : (
@@ -401,13 +333,17 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
             </motion.div>
 
             <motion.div
+              className="war-page-panel war-page-panel--phase"
               custom={2}
               variants={panelVariants}
               initial="hidden"
               animate="visible"
-              style={{ background: "var(--bg-terminal)", minHeight: 0 }}
             >
-              <TerminalPanel title="PHASE STATUS" accent="default" style={{ height: "100%", minHeight: 0 }}>
+              <TerminalPanel
+                title="PHASE STATUS"
+                accent="default"
+                className="war-page-terminal-panel"
+              >
                 <PhaseStatusPanel
                   lastTickMs={lastTickMs}
                   tribeScores={tribeScores}
@@ -425,14 +361,18 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
             </motion.div>
 
             <motion.div
+              className="war-page-panel war-page-panel--systems"
               custom={3}
               variants={panelVariants}
               initial="hidden"
               animate="visible"
-              style={{ background: "var(--bg-terminal)", height: "100%", minHeight: 0 }}
             >
-              <TerminalPanel title="SYSTEM CONTROL" accent="default" style={{ height: "100%", minHeight: 0 }}>
-                <div style={{ padding: "0.35rem" }}>
+              <TerminalPanel
+                title="SYSTEM CONTROL"
+                accent="default"
+                className="war-page-terminal-panel"
+              >
+                <div className="war-page-panel__body-pad">
                   <SystemControlPanel
                     systems={displayedSystems}
                     tribeScores={tribeScores}
@@ -444,14 +384,18 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
             </motion.div>
 
             <motion.div
+              className="war-page-panel war-page-panel--feed"
               custom={4}
               variants={panelVariants}
               initial="hidden"
               animate="visible"
-              style={{ background: "var(--bg-terminal)", minHeight: 0 }}
             >
-              <TerminalPanel title="CONTROL FEED" accent="default" style={{ height: "100%", minHeight: 0 }}>
-                <div style={{ padding: "0.35rem", height: "100%", minHeight: 0 }}>
+              <TerminalPanel
+                title="CONTROL FEED"
+                accent="default"
+                className="war-page-terminal-panel"
+              >
+                <div className="war-page-panel__body-pad war-page-panel__body-pad--fill">
                   <ControlFeed
                     snapshots={snapshots.length > 0 ? snapshots : undefined}
                     tribeScores={tribeScores}
@@ -464,25 +408,15 @@ export default function WarPage({ mode = "live" }: WarPageProps) {
 
             {useMock && (
               <motion.div
+                className="war-page-footer"
                 custom={5}
                 variants={panelVariants}
                 initial="hidden"
                 animate="visible"
-                style={{
-                  gridColumn: "1 / -1",
-                  background: "rgba(242,201,76,0.04)",
-                  borderTop: "1px solid var(--yellow-dim)",
-                  padding: "0.45rem 1.25rem",
-                  fontFamily: "IBM Plex Mono",
-                  fontSize: "0.58rem",
-                  letterSpacing: "0.1em",
-                  color: "var(--yellow-dim)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
               >
                 <span>
-                  DEMO MODE — mock data active. Set verifier snapshot envs to enable simulation/live feeds.
+                  DEMO MODE - mock data active. Set verifier snapshot envs to enable
+                  simulation/live feeds.
                 </span>
                 <span>LINEAGE WAR // TERMINAL v0.1</span>
               </motion.div>
