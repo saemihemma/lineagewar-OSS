@@ -437,6 +437,15 @@ code {
   display: flex;
   flex-direction: column;
   height: 100%;
+  --war-scoreboard-card-padding: 0.85rem 1.25rem 0.75rem;
+  --war-scoreboard-card-gap: 0.5rem;
+  --war-scoreboard-card-header-gap: 0.5rem;
+  --war-scoreboard-name-size: 0.75rem;
+  --war-scoreboard-status-size: 0.7rem;
+  --war-scoreboard-stats-gap: 0 1.5rem;
+  --war-scoreboard-stats-margin-top: 0.25rem;
+  --war-scoreboard-stats-padding-top: 0.5rem;
+  --war-scoreboard-stats-size: 0.75rem;
 }
 
 .war-scoreboard__cards {
@@ -449,6 +458,12 @@ code {
 
 .war-scoreboard__card {
   min-width: 0;
+}
+
+.war-timeline {
+  --war-timeline-tick-size: 11px;
+  --war-timeline-legend-size: 0.6rem;
+  --war-timeline-legend-padding-top: 0.4rem;
 }
 
 .system-control-panel {
@@ -637,12 +652,72 @@ code {
 }
 
 @media (max-width: 639px) {
+  .terminal-header {
+    gap: 0.55rem;
+    padding: 0.7rem 0.7rem 0.65rem;
+  }
+
   .terminal-header__primary {
-    gap: 0.55rem 0.8rem;
+    gap: 0.4rem 0.7rem;
+  }
+
+  .terminal-header__right,
+  .terminal-header-actions {
+    gap: 0.4rem;
   }
 
   .terminal-header-action {
+    flex: 1 1 calc(50% - 0.2rem);
+    min-height: 2.15rem;
+    padding: 0.48rem 0.6rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+  }
+
+  .terminal-header-actions > *:last-child {
     flex-basis: 100%;
+  }
+
+  .terminal-header__meta-item {
+    font-size: 0.56rem !important;
+  }
+
+  .war-page-panel--scoreboard .war-page-terminal-panel > div:last-child {
+    padding: 0.55rem !important;
+  }
+
+  .war-page-terminal-panel--history > div:first-child,
+  .war-page-panel--phase .war-page-terminal-panel > div:first-child,
+  .war-page-panel--systems .war-page-terminal-panel > div:first-child,
+  .war-page-panel--feed .war-page-terminal-panel > div:first-child {
+    padding: 0.35rem 0.65rem !important;
+  }
+
+  .war-page-terminal-panel--history > div:last-child {
+    padding: 0.5rem 0.5rem 0 !important;
+  }
+
+  .war-page-terminal-panel--history {
+    min-height: 14rem;
+  }
+
+  .war-scoreboard {
+    --segmented-value-size-xl: 2.9rem;
+    --war-scoreboard-card-padding: 0.65rem 0.9rem 0.6rem;
+    --war-scoreboard-card-gap: 0.35rem;
+    --war-scoreboard-card-header-gap: 0.35rem;
+    --war-scoreboard-name-size: 0.68rem;
+    --war-scoreboard-status-size: 0.62rem;
+    --war-scoreboard-stats-gap: 0 1rem;
+    --war-scoreboard-stats-margin-top: 0.1rem;
+    --war-scoreboard-stats-padding-top: 0.35rem;
+    --war-scoreboard-stats-size: 0.68rem;
+  }
+
+  .war-timeline {
+    --war-timeline-tick-size: 9px;
+    --war-timeline-legend-size: 0.5rem;
+    --war-timeline-legend-padding-top: 0.15rem;
   }
 
   .war-scoreboard__cards {

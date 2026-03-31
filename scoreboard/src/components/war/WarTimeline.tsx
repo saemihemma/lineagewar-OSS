@@ -23,6 +23,7 @@ export default function WarTimeline({ chartData, chartSeries }: WarTimelineProps
 
   return (
     <motion.div
+      className="war-timeline"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.2 }}
@@ -55,14 +56,22 @@ export default function WarTimeline({ chartData, chartSeries }: WarTimelineProps
           <XAxis
             dataKey="tick"
             stroke="transparent"
-            tick={{ fill: "var(--text-dim)", fontSize: 11, fontFamily: "IBM Plex Mono" }}
+            tick={{
+              fill: "var(--text-dim)",
+              fontSize: "var(--war-timeline-tick-size, 11px)",
+              fontFamily: "IBM Plex Mono",
+            }}
             tickLine={false}
             axisLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
             stroke="transparent"
-            tick={{ fill: "var(--text-dim)", fontSize: 11, fontFamily: "IBM Plex Mono" }}
+            tick={{
+              fill: "var(--text-dim)",
+              fontSize: "var(--war-timeline-tick-size, 11px)",
+              fontFamily: "IBM Plex Mono",
+            }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)}
@@ -84,7 +93,11 @@ export default function WarTimeline({ chartData, chartSeries }: WarTimelineProps
             cursor={{ stroke: "var(--border-panel)", strokeWidth: 1 }}
           />
           <Legend
-            wrapperStyle={{ fontSize: "0.6rem", fontFamily: "IBM Plex Mono", paddingTop: "0.4rem" }}
+            wrapperStyle={{
+              fontSize: "var(--war-timeline-legend-size, 0.6rem)",
+              fontFamily: "IBM Plex Mono",
+              paddingTop: "var(--war-timeline-legend-padding-top, 0.4rem)",
+            }}
             formatter={(label) => (
               <span style={{ color: "var(--text-muted)", letterSpacing: "0.08em" }}>
                 {label.toUpperCase()}

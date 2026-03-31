@@ -42,10 +42,10 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
               style={{
                 background: "var(--bg-panel)",
                 borderTop: `2px solid ${color}`,
-                padding: "0.85rem 1.25rem 0.75rem",
+                padding: "var(--war-scoreboard-card-padding, 0.85rem 1.25rem 0.75rem)",
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.5rem",
+                gap: "var(--war-scoreboard-card-gap, 0.5rem)",
               }}
             >
               {/* Header row: name + status badge */}
@@ -55,13 +55,14 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
                   display: "flex",
                   alignItems: "flex-start",
                   justifyContent: "space-between",
-                  gap: "0.5rem",
+                  gap: "var(--war-scoreboard-card-header-gap, 0.5rem)",
                 }}
               >
                 <span
+                  className="war-scoreboard__tribe-name"
                   style={{
                     fontFamily: "IBM Plex Mono",
-                    fontSize: "0.75rem",
+                    fontSize: "var(--war-scoreboard-name-size, 0.75rem)",
                     fontWeight: 600,
                     letterSpacing: "0.1em",
                     textTransform: "uppercase",
@@ -72,9 +73,10 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
                 </span>
                 {!tied && (
                   <span
+                    className="war-scoreboard__status"
                     style={{
                       fontFamily: "IBM Plex Mono",
-                      fontSize: "0.7rem",
+                      fontSize: "var(--war-scoreboard-status-size, 0.7rem)",
                       letterSpacing: "0.06em",
                       color: isLeading ? color : "var(--text-dim)",
                       whiteSpace: "nowrap",
@@ -90,15 +92,16 @@ export default function WarScoreboard({ tribeScores, systems = [] }: WarScoreboa
 
               {/* Sub-stats */}
               <div
+                className="war-scoreboard__stats"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "0 1.5rem",
-                  marginTop: "0.25rem",
-                  paddingTop: "0.5rem",
+                  gap: "var(--war-scoreboard-stats-gap, 0 1.5rem)",
+                  marginTop: "var(--war-scoreboard-stats-margin-top, 0.25rem)",
+                  paddingTop: "var(--war-scoreboard-stats-padding-top, 0.5rem)",
                   borderTop: "1px solid var(--border-grid)",
                   fontFamily: "IBM Plex Mono",
-                  fontSize: "0.75rem",
+                  fontSize: "var(--war-scoreboard-stats-size, 0.75rem)",
                 }}
               >
                 <div style={{ color: "var(--text-dim)" }}>CTRL PTS</div>

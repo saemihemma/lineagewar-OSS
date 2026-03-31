@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { EditorialDisplayLedger } from "./editorial-display-ledger.js";
 import { loadSystemDisplayConfigs } from "./system-display-config.js";
 import type { EditorialDisplayEntry, SystemDisplayConfig } from "./types.js";
 
@@ -135,7 +136,7 @@ export function defaultEditorialDisplayPath(outputPath: string): string {
   return path.join(path.dirname(outputPath), "editorial-display.json");
 }
 
-export function readEditorialDisplayEntries(editorialDisplayPath: string | null): EditorialDisplayEntry[] {
+function readEditorialDisplayEntriesFromFile(editorialDisplayPath: string | null): EditorialDisplayEntry[] {
   if (!editorialDisplayPath) return [];
   const absolutePath = path.resolve(process.cwd(), editorialDisplayPath);
   if (!existsSync(absolutePath)) return [];
@@ -149,22 +150,22 @@ export function readEditorialDisplayEntries(editorialDisplayPath: string | null)
   }
 }
 
-export function readEditorialDisplayEntriesForWar(
+function readEditorialDisplayEntriesForWarFromFile(
   editorialDisplayPath: string | null,
   warId: number,
 ): EditorialDisplayEntry[] {
   if (!Number.isFinite(warId) || warId <= 0) return [];
   return sortEntriesForWar(
-    readEditorialDisplayEntries(editorialDisplayPath).filter((entry) => entry.warId === warId),
+    readEditorialDisplayEntriesFromFile(editorialDisplayPath).filter((entry) => entry.warId === warId),
   );
 }
 
-export async function upsertEditorialDisplayEntries(
+async function upsertEditorialDisplayEntriesInFile(
   editorialDisplayPath: string,
   entries: EditorialDisplayEntry[],
 ): Promise<EditorialDisplayEntry[]> {
   const absolutePath = path.resolve(process.cwd(), editorialDisplayPath);
-  const existing = readEditorialDisplayEntries(absolutePath);
+  const existing = readEditorialDisplayEntriesFromFile(absolutePath);
   const merged = new Map(existing.map((entry) => [keyForEntry(entry), entry]));
 
   for (const entry of entries) {
@@ -179,6 +180,52 @@ export async function upsertEditorialDisplayEntries(
     entries: nextEntries,
   } satisfies EditorialDisplayDocument);
   return nextEntries;
+}
+
+export async function readEditorialDisplayEntries(options: {
+  ledger: EditorialDisplayLedger | null;
+  editorialDisplayPath: string | null;
+}): Promise<EditorialDisplayEntry[]> {
+  const { ledger, editorialDisplayPath } = options;
+  if (ledger) {
+    return sortEntries(await ledger.loadEntries());
+  }
+  return readEditorialDisplayEntriesFromFile(editorialDisplayPath);
+}
+
+export async function readEditorialDisplayEntriesForWar(options: {
+  ledger: EditorialDisplayLedger | null;
+  editorialDisplayPath: string | null;
+  warId: number;
+}): Promise<EditorialDisplayEntry[]> {
+  const { ledger, editorialDisplayPath, warId } = options;
+  if (!Number.isFinite(warId) || warId <= 0) return [];
+  if (ledger) {
+    return sortEntriesForWar(await ledger.loadEntriesForWar(warId));
+  }
+  return readEditorialDisplayEntriesForWarFromFile(editorialDisplayPath, warId);
+}
+
+export async function upsertEditorialDisplayEntries(options: {
+  ledger: EditorialDisplayLedger | null;
+  editorialDisplayPath: string | null;
+  entries: EditorialDisplayEntry[];
+}): Promise<EditorialDisplayEntry[]> {
+  const { ledger, editorialDisplayPath, entries } = options;
+  const normalizedEntries = sortEntries(
+    entries.map(normalizeEntry).filter((entry): entry is EditorialDisplayEntry => entry !== null),
+  );
+  if (normalizedEntries.length === 0) return [];
+
+  if (ledger) {
+    await ledger.upsertEntries(normalizedEntries);
+    return normalizedEntries;
+  }
+
+  if (!editorialDisplayPath) {
+    return normalizedEntries;
+  }
+  return upsertEditorialDisplayEntriesInFile(editorialDisplayPath, normalizedEntries);
 }
 
 export function resolveCurrentSystemDisplayConfigs(options: {
@@ -235,7 +282,8 @@ export function resolveEditorialDisplayForTick(options: {
   );
 }
 
-export function loadResolvedSystemDisplayConfigs(options: {
+export async function loadResolvedSystemDisplayConfigs(options: {
+  ledger: EditorialDisplayLedger | null;
   systemDisplayConfigPath: string | null;
   systemNamesPath?: string | null;
   editorialDisplayPath: string | null;
@@ -243,11 +291,12 @@ export function loadResolvedSystemDisplayConfigs(options: {
   atMs: number;
   phaseId?: number | null;
   systemIds?: Array<string | number>;
-}): {
+}): Promise<{
   editorialDisplayEntries: EditorialDisplayEntry[];
   systemDisplayConfigs: SystemDisplayConfig[];
-} {
+}> {
   const {
+    ledger,
     systemDisplayConfigPath,
     systemNamesPath = null,
     editorialDisplayPath,
@@ -257,7 +306,7 @@ export function loadResolvedSystemDisplayConfigs(options: {
     systemIds = [],
   } = options;
   const legacySystemDisplayConfigs = loadSystemDisplayConfigs(systemDisplayConfigPath, systemNamesPath);
-  const editorialDisplayEntries = readEditorialDisplayEntries(editorialDisplayPath);
+  const editorialDisplayEntries = await readEditorialDisplayEntries({ ledger, editorialDisplayPath });
   const systemDisplayConfigs = resolveCurrentSystemDisplayConfigs({
     entries: editorialDisplayEntries,
     legacyConfigs: legacySystemDisplayConfigs,

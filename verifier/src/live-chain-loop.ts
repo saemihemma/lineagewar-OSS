@@ -8,10 +8,10 @@ import { writeVerifierArtifacts } from "./artifact-output.js";
 import {
   defaultEditorialDisplayPath,
   loadResolvedSystemDisplayConfigs,
-  readEditorialDisplayEntries,
   readEditorialDisplayEntriesForWar,
   upsertEditorialDisplayEntries,
 } from "./editorial-display-store.js";
+import { EditorialDisplayLedger } from "./editorial-display-ledger.js";
 import { buildScoreboardPayload } from "./frontend-output.js";
 import { GraphqlAssemblyResolutionError } from "./graphql-assembly-source.js";
 import { hashCanonicalSnapshot } from "./hash.js";
@@ -833,13 +833,15 @@ async function writeBootstrapScoreboard(
   discovered: DiscoveredWarConfig,
   outputPath: string,
   fallbackTickRateMinutes: number,
+  editorialLedger: EditorialDisplayLedger | null,
 ): Promise<void> {
   const now = Date.now();
   const dataSource = new RegistryBackedVerifierDataSource(config);
   const phaseMetadata = await collectPhaseMetadata(dataSource, now, fallbackTickRateMinutes);
   const activeSystemIds =
     phaseMetadata.activeSystemIds.length > 0 ? phaseMetadata.activeSystemIds : discovered.warSystemIds;
-  const { editorialDisplayEntries, systemDisplayConfigs } = loadResolvedSystemDisplayConfigs({
+  const { editorialDisplayEntries, systemDisplayConfigs } = await loadResolvedSystemDisplayConfigs({
+    ledger: editorialLedger,
     systemDisplayConfigPath: config.systemDisplayConfigPath,
     systemNamesPath: process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
     editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
@@ -921,6 +923,7 @@ async function runTick(
   tickMinutes: number,
   historicalTickCount: number,
   ledger: TickLedger | null,
+  editorialLedger: EditorialDisplayLedger | null,
   warEndMs?: number | null,
 ): Promise<TickRunOutcome> {
   const now = Date.now();
@@ -1019,7 +1022,8 @@ async function runTick(
   );
   const currentDisplaySystemIds =
     currentPhase?.activeSystemIds.length ? currentPhase.activeSystemIds : discovered.warSystemIds;
-  const { editorialDisplayEntries, systemDisplayConfigs } = loadResolvedSystemDisplayConfigs({
+  const { editorialDisplayEntries, systemDisplayConfigs } = await loadResolvedSystemDisplayConfigs({
+    ledger: editorialLedger,
     systemDisplayConfigPath: config.systemDisplayConfigPath,
     systemNamesPath: process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
     editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
@@ -1247,6 +1251,7 @@ async function hydrateStickyPublicWarArtifacts(
   rpcUrl: string,
   graphqlUrl: string | null,
   outputPath: string,
+  editorialLedger: EditorialDisplayLedger | null,
 ): Promise<number | null> {
   const databaseUrl = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL || null;
   if (!databaseUrl) {
@@ -1307,7 +1312,8 @@ async function hydrateStickyPublicWarArtifacts(
   const config = buildVerifierConfig(discovered, rpcUrl, graphqlUrl, outputPath);
   const dataSource = new RegistryBackedVerifierDataSource(config);
   const phaseMetadata = await collectPhaseMetadata(dataSource, referenceMs, discovered.defaultTickMinutes);
-  const { editorialDisplayEntries, systemDisplayConfigs } = loadResolvedSystemDisplayConfigs({
+  const { editorialDisplayEntries, systemDisplayConfigs } = await loadResolvedSystemDisplayConfigs({
+    ledger: editorialLedger,
     systemDisplayConfigPath: config.systemDisplayConfigPath,
     systemNamesPath: process.env.LINEAGE_SYSTEM_NAMES_PATH ?? null,
     editorialDisplayPath: editorialDisplayPathForOutput(outputPath),
@@ -1412,6 +1418,7 @@ async function runWarLoop(
   outputPath: string,
   maxHistory: number,
   once: boolean,
+  editorialLedger: EditorialDisplayLedger | null,
   warIdOverride?: number | null,
 ): Promise<void> {
 
@@ -1444,7 +1451,7 @@ async function runWarLoop(
       return;
     }
     console.log("War is already resolved. Will poll for next unresolved war...");
-    await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once);
+    await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once, editorialLedger);
     return;
   }
 
@@ -1484,7 +1491,7 @@ async function runWarLoop(
   }
 
   // Write initial scoreboard immediately so the frontend has fresh war data
-  await writeBootstrapScoreboard(currentConfig, discovered, outputPath, currentTickMinutes);
+  await writeBootstrapScoreboard(currentConfig, discovered, outputPath, currentTickMinutes, editorialLedger);
   refreshPublishedArtifactSummary(outputPath);
   console.log(`Wrote initial scoreboard for War ${discovered.warId} to ${outputPath}`);
   runtimeStatus.lastTickMs = null;
@@ -1499,6 +1506,7 @@ async function runWarLoop(
       currentTickMinutes,
       maxHistory,
       ledger,
+      editorialLedger,
       discovered.endedAtMs,
     );
     runtimeStatus.lastTickMs = initialOutcome.lastTickMs;
@@ -1561,7 +1569,7 @@ async function runWarLoop(
           if (timer) clearTimeout(timer);
           if (ledger) await ledger.close();
           maybeClearNotifyHintForWar(hintedWar.warId);
-          await runWarLoop(hintedWar, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false);
+          await runWarLoop(hintedWar, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false, editorialLedger);
           return;
         }
       } catch (error) {
@@ -1613,6 +1621,7 @@ async function runWarLoop(
         currentTickMinutes,
         maxHistory,
         ledger,
+        editorialLedger,
         freshState.endedAtMs,
       );
       runtimeStatus.lastTickMs = finalOutcome.lastTickMs;
@@ -1623,14 +1632,23 @@ async function runWarLoop(
         return;
       }
       console.log("Polling for next unresolved war...");
-      await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false);
+      await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false, editorialLedger);
       return;
     }
 
     if (freshState.endedAtMs != null && Date.now() >= freshState.endedAtMs) {
       console.log(`War ended at ${new Date(freshState.endedAtMs).toISOString()}. Running final tick and resolving on chain...`);
 
-      const finalResults = await runTick(currentConfig, discovered, outputPath, currentTickMinutes, maxHistory, ledger, freshState.endedAtMs);
+      const finalResults = await runTick(
+        currentConfig,
+        discovered,
+        outputPath,
+        currentTickMinutes,
+        maxHistory,
+        ledger,
+        editorialLedger,
+        freshState.endedAtMs,
+      );
       runtimeStatus.lastTickMs = finalResults.lastTickMs;
       console.log("Final scoreboard written.");
 
@@ -1775,7 +1793,7 @@ async function runWarLoop(
           return;
         }
         console.log("War resolved. Polling for next unresolved war...");
-        await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false);
+        await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false, editorialLedger);
         return;
       } else {
         // All retries failed — WAR CONTINUES. Do NOT close ledger or exit.
@@ -1848,7 +1866,7 @@ async function runWarLoop(
     const readyToScore = freshState.systemConfigIds.length > 0;
 
     if (!readyToScore) {
-      await writeBootstrapScoreboard(currentConfig, discovered, outputPath, currentTickMinutes);
+      await writeBootstrapScoreboard(currentConfig, discovered, outputPath, currentTickMinutes, editorialLedger);
       refreshPublishedArtifactSummary(outputPath);
       runtimeStatus.state = "waiting";
       runtimeStatus.tickRateMinutes = currentTickMinutes;
@@ -1885,6 +1903,7 @@ async function runWarLoop(
       currentTickMinutes,
       Math.min(historyCount, maxHistory),
       ledger,
+      editorialLedger,
       freshState.endedAtMs,
     );
     runtimeStatus.state = tickOutcome.tickStatus === "degraded_frozen" ? "waiting" : "running";
@@ -1903,6 +1922,9 @@ async function runWarLoop(
     if (ledger) {
       await ledger.close();
     }
+    if (editorialLedger) {
+      await editorialLedger.close();
+    }
   };
 
   console.log("\nLive chain verifier loop started. Press Ctrl+C to stop.");
@@ -1912,6 +1934,7 @@ async function startHttpServer(
   getStatus: () => Record<string, unknown>,
   verifierArtifactDir: string,
   editorialDisplayPath: string,
+  editorialLedger: EditorialDisplayLedger | null,
 ): Promise<void> {
   const http = await import("node:http");
   const fs = await import("node:fs");
@@ -2009,13 +2032,28 @@ async function startHttpServer(
         return;
       }
 
-      const entries = readEditorialDisplayEntriesForWar(editorialDisplayPath, warId);
-      res.writeHead(200, {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        ...noStoreHeaders,
-      });
-      res.end(JSON.stringify({ ok: true, warId, count: entries.length, entries }));
+      void (async () => {
+        try {
+          const entries = await readEditorialDisplayEntriesForWar({
+            ledger: editorialLedger,
+            editorialDisplayPath,
+            warId,
+          });
+          res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            ...noStoreHeaders,
+          });
+          res.end(JSON.stringify({ ok: true, warId, count: entries.length, entries }));
+        } catch (error) {
+          res.writeHead(500, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            ...noStoreHeaders,
+          });
+          res.end(JSON.stringify({ ok: false, error: errorMessage(error) }));
+        }
+      })();
       return;
     }
 
@@ -2128,7 +2166,11 @@ async function startHttpServer(
         }
 
         try {
-          await upsertEditorialDisplayEntries(editorialDisplayPath, entries);
+          await upsertEditorialDisplayEntries({
+            ledger: editorialLedger,
+            editorialDisplayPath,
+            entries,
+          });
           const hint = rememberNotifyHint({
             warId,
             reason: typeof payload.reason === "string" ? payload.reason : "editorial-display",
@@ -2197,6 +2239,7 @@ async function pollForNextWar(
   outputPath: string,
   maxHistory: number,
   once: boolean,
+  editorialLedger: EditorialDisplayLedger | null,
 ): Promise<void> {
   if (once) {
     console.log("--once flag set, not waiting for next war.");
@@ -2204,7 +2247,7 @@ async function pollForNextWar(
   }
 
   try {
-    await hydrateStickyPublicWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
+    await hydrateStickyPublicWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath, editorialLedger);
   } catch (error) {
     console.error(`  Could not hydrate frozen ended-war artifacts: ${errorMessage(error)}`);
   }
@@ -2224,7 +2267,7 @@ async function pollForNextWar(
       if (!discovered.warResolved) {
         console.log(`\nFound unresolved War ${discovered.warId}. Starting verifier loop...`);
         maybeClearNotifyHintForWar(discovered.warId);
-        await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false);
+        await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, false, editorialLedger);
         return;
       }
     } catch (err) {
@@ -2232,7 +2275,7 @@ async function pollForNextWar(
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("No unresolved war found")) {
         try {
-          await hydrateStickyPublicWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath);
+          await hydrateStickyPublicWarArtifacts(packageId, rpcUrl, graphqlUrl, outputPath, editorialLedger);
         } catch (error) {
           console.error(`  Could not refresh frozen ended-war artifacts: ${errorMessage(error)}`);
         }
@@ -2259,6 +2302,8 @@ async function main(): Promise<void> {
   const outputPath = process.env.LINEAGE_OUTPUT_PATH
     || defaultRuntimeOutputPath();
   const maxHistory = envNumber("LINEAGE_MAX_HISTORY_TICKS", MAX_CATCHUP_TICKS);
+  const databaseUrl = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL || null;
+  let editorialLedger: EditorialDisplayLedger | null = null;
   runtimeDiagnostics.configured = {
     packageId,
     packageIdLooksValid: looksLikePackageId(packageId),
@@ -2279,6 +2324,14 @@ async function main(): Promise<void> {
 
   ensureSignalHandlers();
 
+  if (databaseUrl) {
+    editorialLedger = new EditorialDisplayLedger(databaseUrl);
+    await editorialLedger.ensureTable();
+    console.log("  Editorial display: PostgreSQL connected");
+  } else {
+    console.log("  Editorial display: legacy file mode (no DATABASE_URL)");
+  }
+
   if (!once) {
     await startHttpServer(() => ({
       state: runtimeStatus.state,
@@ -2289,41 +2342,47 @@ async function main(): Promise<void> {
       now: Date.now(),
       notifyHint: currentNotifyHint(),
       diagnostics: runtimeDiagnostics,
-    }), path.dirname(outputPath), editorialDisplayPathForOutput(outputPath));
+    }), path.dirname(outputPath), editorialDisplayPathForOutput(outputPath), editorialLedger);
   }
 
   console.log("Discovering war configuration from chain...");
 
   try {
-    const discovered = warIdOverride && Number.isFinite(warIdOverride)
-      ? await discoverWarConfig({
-        packageId,
-        rpcUrl,
-        warId: warIdOverride,
-      })
-      : await discoverPreferredWar(packageId, rpcUrl, currentNotifyHint()?.warId ?? null);
+    try {
+      const discovered = warIdOverride && Number.isFinite(warIdOverride)
+        ? await discoverWarConfig({
+          packageId,
+          rpcUrl,
+          warId: warIdOverride,
+        })
+        : await discoverPreferredWar(packageId, rpcUrl, currentNotifyHint()?.warId ?? null);
 
-    runtimeDiagnostics.lastDiscoveredWar = summarizeDiscoveredWar(discovered);
-    clearLastDiscoveryError();
-    runtimeStatus.warId = discovered.warId;
-    runtimeStatus.tickRateMinutes = discovered.defaultTickMinutes;
-    runtimeStatus.state = "running";
-    maybeClearNotifyHintForWar(discovered.warId);
+      runtimeDiagnostics.lastDiscoveredWar = summarizeDiscoveredWar(discovered);
+      clearLastDiscoveryError();
+      runtimeStatus.warId = discovered.warId;
+      runtimeStatus.tickRateMinutes = discovered.defaultTickMinutes;
+      runtimeStatus.state = "running";
+      maybeClearNotifyHintForWar(discovered.warId);
 
-    await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once, warIdOverride);
-  } catch (err) {
-    setLastDiscoveryError("main_startup", err);
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("No unresolved war found") && warIdOverride == null) {
-      console.log("No unresolved wars found on chain.");
-    } else {
-      console.error("War discovery/loop failed:", msg);
-      if (err instanceof Error && err.stack) console.error(err.stack);
+      await runWarLoop(discovered, packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once, editorialLedger, warIdOverride);
+    } catch (err) {
+      setLastDiscoveryError("main_startup", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("No unresolved war found") && warIdOverride == null) {
+        console.log("No unresolved wars found on chain.");
+      } else {
+        console.error("War discovery/loop failed:", msg);
+        if (err instanceof Error && err.stack) console.error(err.stack);
+      }
+      runtimeStatus.state = "waiting";
+      runtimeStatus.warId = null;
+      runtimeStatus.nextTickMs = Date.now() + WAR_POLL_MS;
+      await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once, editorialLedger);
     }
-    runtimeStatus.state = "waiting";
-    runtimeStatus.warId = null;
-    runtimeStatus.nextTickMs = Date.now() + WAR_POLL_MS;
-    await pollForNextWar(packageId, rpcUrl, graphqlUrl, outputPath, maxHistory, once);
+  } finally {
+    if (once && editorialLedger) {
+      await editorialLedger.close();
+    }
   }
 }
 

@@ -13,7 +13,7 @@ const sizeMap = {
   sm: "1.4rem",
   md: "2rem",
   lg: "2.8rem",
-  xl: "3.8rem",
+  xl: "var(--segmented-value-size-xl, 3.8rem)",
 };
 
 /**
