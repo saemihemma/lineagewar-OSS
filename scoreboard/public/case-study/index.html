@@ -327,6 +327,7 @@ p.t em{ color:var(--text); font-style:italic; }
 
     <!-- EDIT: Pre-hype countdown mockup (source-accurate from prehype/ source) -->
     <div class="fade-in">
+      <div class="section-label" style="margin-bottom:0.8rem;">Live Preview</div>
       <div class="ss-label">[ lineagewar.xyz &mdash; Pre-Hype Countdown ]</div>
       <div class="ss">
         <div class="ss-bar">
@@ -383,8 +384,8 @@ p.t em{ color:var(--text); font-style:italic; }
 
     <div class="fade-in">
       <div class="stats">
-        <div class="stat"><div class="stat-val">6</div><div class="stat-lbl">Runtime Layers</div></div>
-        <div class="stat"><div class="stat-val">11</div><div class="stat-lbl">Move Modules</div></div>
+        <div class="stat"><div class="stat-val" data-countup="6">0</div><div class="stat-lbl">Runtime Layers</div></div>
+        <div class="stat"><div class="stat-val" data-countup="11">0</div><div class="stat-lbl">Move Modules</div></div>
         <div class="stat"><div class="stat-val">Play-to-Score</div><div class="stat-lbl">Zero Player Setup</div></div>
         <div class="stat"><div class="stat-val">Chain-Verified</div><div class="stat-lbl">Resolution</div></div>
       </div>
@@ -394,25 +395,9 @@ p.t em{ color:var(--text); font-style:italic; }
       <p class="t">The Lineage War is a <strong>territorial control event system</strong> on Sui for EVE Frontier. Operators create wars, register tribes, publish phases with per-system scoring rules, and schedule termination. The verifier discovers wars from chain events, <strong>scores continuously off-chain</strong>, generates auditable public artifacts, and submits final resolution transactions. The ledger is <strong>append-only</strong>. Judgment is not retracted.</p>
     </div>
 
-    <!-- EDIT: Architecture from lineagewar-OSS -->
-    <div class="fade-in">
-      <div class="arch"><span class="h">Admin Panel (React)</span> <span class="d">&mdash;wallet txs&mdash;&gt;</span> <span class="h">Sui Testnet</span>
-<span class="d"> |                                         |</span>
-<span class="d"> |&mdash; POST /notify &mdash;&gt;</span> <span class="a">Verifier (Node.js)</span> <span class="d">&mdash;|</span> <span class="d">JSON-RPC + GraphQL</span>
-<span class="d">                         |                  |</span>
-<span class="d">                         |&mdash;</span> <span class="h">PostgreSQL</span> <span class="d">(committed_ticks_v2)</span>
-<span class="d">                         |</span>
-<span class="d">                         |&mdash;</span> <span class="h">latest.json</span> <span class="d">&mdash;&mdash;&gt;</span> <span class="h">Scoreboard (React)</span>
-<span class="d">                         |</span>
-<span class="d">                         |&mdash;</span> <span class="h">resolution.json</span> <span class="d">&mdash;&gt;</span> <span class="a">Prediction Market</span>
-<span class="d">                         |</span>
-<span class="d">                         |&mdash;</span> <span class="h">audit/</span> <span class="d">(per-tick receipts)</span>
-<span class="d"> </span>
-<span class="h">Activation API (Hono)</span> <span class="d">&mdash;&gt;</span> <span class="h">Pre-Hype UI</span></div>
-    </div>
-
     <!-- Source-accurate scoreboard mockup -->
     <div class="fade-in">
+      <div class="section-label" style="margin-bottom:0.8rem;">Live Preview</div>
       <div class="ss-label">[ lineagewar.xyz &mdash; Live Scoreboard ]</div>
       <div class="ss">
         <div class="ss-bar">
@@ -429,11 +414,11 @@ p.t em{ color:var(--text); font-style:italic; }
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
             <div style="border:1px solid var(--tribe-a);padding:0.8rem;background:rgba(242,201,76,0.03);">
               <div style="font-size:0.5rem;color:var(--tribe-a);letter-spacing:0.1em;margin-bottom:0.2rem;">TRIBE A</div>
-              <div style="font-size:1.2rem;font-weight:600;color:var(--tribe-a);text-shadow:0 0 10px rgba(242,201,76,0.2);">847</div>
+              <div style="font-size:1.2rem;font-weight:600;color:var(--tribe-a);text-shadow:0 0 10px rgba(242,201,76,0.2);" data-countup="847">0</div>
             </div>
             <div style="border:1px solid var(--tribe-b);padding:0.8rem;background:rgba(77,184,212,0.03);">
               <div style="font-size:0.5rem;color:var(--tribe-b);letter-spacing:0.1em;margin-bottom:0.2rem;">TRIBE B</div>
-              <div style="font-size:1.2rem;font-weight:600;color:var(--tribe-b);text-shadow:0 0 10px rgba(77,184,212,0.2);">692</div>
+              <div style="font-size:1.2rem;font-weight:600;color:var(--tribe-b);text-shadow:0 0 10px rgba(77,184,212,0.2);" data-countup="692">0</div>
             </div>
           </div>
           <!-- Systems grid -->
@@ -445,6 +430,24 @@ p.t em{ color:var(--text); font-style:italic; }
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Architecture from lineagewar-OSS -->
+    <div class="fade-in">
+      <div class="section-label" style="margin-bottom:0.8rem;">System Architecture</div>
+      <div class="arch"><span class="h">Admin Panel (React)</span> <span class="d">&mdash;wallet txs&mdash;&gt;</span> <span class="h">Sui Testnet</span>
+<span class="d"> |                                         |</span>
+<span class="d"> |&mdash; POST /notify &mdash;&gt;</span> <span class="a">Verifier (Node.js)</span> <span class="d">&mdash;|</span> <span class="d">JSON-RPC + GraphQL</span>
+<span class="d">                         |                  |</span>
+<span class="d">                         |&mdash;</span> <span class="h">PostgreSQL</span> <span class="d">(committed_ticks_v2)</span>
+<span class="d">                         |</span>
+<span class="d">                         |&mdash;</span> <span class="h">latest.json</span> <span class="d">&mdash;&mdash;&gt;</span> <span class="h">Scoreboard (React)</span>
+<span class="d">                         |</span>
+<span class="d">                         |&mdash;</span> <span class="h">resolution.json</span> <span class="d">&mdash;&gt;</span> <span class="a">Prediction Market</span>
+<span class="d">                         |</span>
+<span class="d">                         |&mdash;</span> <span class="h">audit/</span> <span class="d">(per-tick receipts)</span>
+<span class="d"> </span>
+<span class="h">Activation API (Hono)</span> <span class="d">&mdash;&gt;</span> <span class="h">Pre-Hype UI</span></div>
     </div>
 
     <div class="fade-in">
@@ -503,15 +506,15 @@ p.t em{ color:var(--text); font-style:italic; }
 
     <div class="fade-in">
       <div class="stats">
-        <div class="stat"><div class="stat-val">19</div><div class="stat-lbl">Move Modules</div></div>
-        <div class="stat"><div class="stat-val">3</div><div class="stat-lbl">Resolution Tiers</div></div>
+        <div class="stat"><div class="stat-val" data-countup="19">0</div><div class="stat-lbl">Move Modules</div></div>
+        <div class="stat"><div class="stat-val" data-countup="3">0</div><div class="stat-lbl">Resolution Tiers</div></div>
         <div class="stat"><div class="stat-val">Sponsored Gas</div><div class="stat-lbl">Relay</div></div>
         <div class="stat"><div class="stat-val">N-Outcome</div><div class="stat-lbl">CPMM</div></div>
       </div>
     </div>
 
-    <!-- EDIT: Source-accurate prediction market mockup -->
     <div class="fade-in">
+      <div class="section-label" style="margin-bottom:0.8rem;">Live Preview</div>
       <div class="ss-label">[ orchestrator.lineagewar.xyz &mdash; Markets Index ]</div>
       <div class="ss">
         <div class="ss-bar">
@@ -552,8 +555,8 @@ p.t em{ color:var(--text); font-style:italic; }
       </div>
     </div>
 
-    <!-- Architecture from predictionmarket-OSS -->
     <div class="fade-in">
+      <div class="section-label" style="margin-bottom:0.8rem;">System Architecture</div>
       <div class="arch"><span class="h">Frontend (React + TypeScript + Tailwind v4)</span>
 <span class="d">  /markets, /markets/create, /markets/:id, /portfolio, /airdrop</span>
 <span class="d">       | Mysten DApp Kit + Sponsored Txs</span>
@@ -638,6 +641,7 @@ p.t em{ color:var(--text); font-style:italic; }
 
     <!-- Airdrop mockup -->
     <div class="fade-in">
+      <div class="section-label" style="margin-bottom:0.8rem;">Live Preview</div>
       <div class="ss-label">[ orchestrator.lineagewar.xyz/airdrop &mdash; $SUFFER Onboarding ]</div>
       <div class="ss">
         <div class="ss-bar">
@@ -697,11 +701,6 @@ p.t em{ color:var(--text); font-style:italic; }
           <div class="card-title">lead-producer-OSS</div>
           <div class="card-text">Full-stack AI product team framework that emerged from building the Orchestrator. <strong>57 specialist skills</strong>: 34 roles, 12 review teams, 10 workflows. One entry point, structured analysis, coordinated agentic development. Used to build, review, and harden every component in this stack.</div>
         </a>
-        <div class="card">
-          <div class="card-label">DESIGN SYSTEM</div>
-          <div class="card-title">CRT Terminal Kit</div>
-          <div class="card-text">Shared design tokens across all frontends. IBM Plex Mono, dark phosphor background, mint text, scanlines, vignette, grain, grid background. Zero border-radius everywhere. The aesthetic is the character &mdash; fork the tokens and the fiction comes with them.</div>
-        </div>
       </div>
     </div>
   </div>
@@ -828,6 +827,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('.fade-in').forEach(e=>o.observe(e));
   const b=document.getElementById('scroll-progress');
   window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-window.innerHeight;b.style.width=h>0?(window.scrollY/h*100)+'%':'0%';},{passive:true});
+  // Count-up animation for numeric stats — triggers when parent .fade-in becomes visible
+  function countUp(el){const target=parseInt(el.dataset.countup,10);const duration=600;const start=performance.now();(function step(now){const t=Math.min((now-start)/duration,1);const ease=1-Math.pow(1-t,4);el.textContent=Math.round(ease*target);if(t<1)requestAnimationFrame(step);})(start);}
+  const mo=new MutationObserver(muts=>{muts.forEach(m=>{if(m.target.classList.contains('visible')){m.target.querySelectorAll('[data-countup]').forEach(el=>{if(!el.dataset.counted){el.dataset.counted='1';countUp(el);}});}});});
+  document.querySelectorAll('.fade-in').forEach(fi=>mo.observe(fi,{attributes:true,attributeFilter:['class']}));
 });
 </script>
 
