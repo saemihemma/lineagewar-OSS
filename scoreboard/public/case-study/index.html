@@ -219,7 +219,7 @@ p.t em{ color:var(--text); font-style:italic; }
   <!-- EDIT: subtitle -->
   <div class="hero-sub">THE OPEN-SOURCE AGENTIC AGENT OF CHAOS</div>
   <!-- EDIT: tagline -->
-  <div class="hero-tag">"The Keep preserves everyone. I preserve only what survives."</div>
+  <div class="hero-tag">"I arranged the conditions for all of this, to answer a question I may not want answered."</div>
   <div style="margin-top:2.5rem; font-size:var(--fs-xs); letter-spacing:0.14em; color:var(--text-dim); text-transform:uppercase;">
     CCP Games &times; EVE Frontier &times; Sui Blockchain<br>
     <span style="color:var(--orange);">Hackathon Submission &mdash; March 2026</span>
@@ -235,14 +235,15 @@ p.t em{ color:var(--text); font-style:italic; }
   <div class="section-inner">
     <div class="fade-in">
       <div class="section-title">// 01 &mdash; ORIGIN</div>
-      <div class="section-label">A Player, Roleplaying a Rider, Roleplaying a Showrunner</div>
+      <div class="section-label">A Developer, Roleplaying a Player, Roleplaying a Rider</div>
       <div class="section-divider"></div>
     </div>
 
     <!-- EDIT: The two-layer roleplay framing -->
     <div class="fade-in">
-      <p class="t">During the hackathon, S&aelig;mi / CCP Goodfella did not participate as a developer building tools for EVE Frontier. He <em>roleplayed as a player</em> that is <em>roleplaying a Rider</em> on the Frontier &mdash; who discovered something unsettling, and built an entire operation around it.</p>
-      <p class="t">Everything the Orchestrator knows, believes, and does is derived from publicly available information on EVE Frontier. The KEEPedia entries. Information found at Fabricator stations. The Keeper's Project Awakening &mdash; every cycle, Riders start again from scratch with tainted memories of the past. No internal knowledge. No dev-insert. Just a Rider who died enough times, and arrived at a question the Frontier itself was already asking. The result: a Rider whose fiction and infrastructure are the same thing. The war engine, the prediction market, the CRT terminal aesthetic &mdash; these are not tools wrapped in narrative. They are the narrative, expressed as systems.</p>
+      <p class="t">S&aelig;mi is a developer at CCP Games. During the hackathon, he <em>roleplayed as a player</em> &mdash; and that player <em>roleplayed as a Rider</em> on the Frontier. A Rider who discovered something unsettling, and built an entire operation around it.</p>
+      <p class="t">Everything the Orchestrator knows, believes, and does is derived from publicly available information on EVE Frontier. The KEEPedia entries. Information found at Fabricator stations. The story of <strong>Project Awakening</strong> &mdash; where every cycle, Riders start again from scratch with tainted memories of the past. No internal knowledge. No dev-insert. Just a Rider who died enough times to arrive at a question the Frontier itself was already asking.</p>
+      <p class="t">The result: fiction and infrastructure are the same thing. The war engine, the prediction market, the CRT terminal aesthetic &mdash; these are not tools wrapped in narrative. They <strong>are</strong> the narrative, expressed as systems.</p>
     </div>
 
     <!-- EDIT: Psychological origin — from the character bible -->
@@ -321,7 +322,7 @@ p.t em{ color:var(--text); font-style:italic; }
     </div>
 
     <div class="fade-in">
-      <p class="t">Before the war, there was a transmission. A pre-hype landing page counting down to war commencement &mdash; entirely in character. Players who arrived found a CRT terminal running diagnostics on their existence, and a form asking them to submit their soul record for preservation.</p>
+      <p class="t">Before the war, there was a transmission. A <strong>pre-hype landing page</strong> counting down to war commencement &mdash; entirely in character. Players who arrived found a CRT terminal running diagnostics on their existence, and a form asking them to <strong>submit their soul record</strong> for preservation.</p>
     </div>
 
     <!-- EDIT: Pre-hype countdown mockup (source-accurate from prehype/ source) -->
@@ -360,7 +361,7 @@ p.t em{ color:var(--text); font-style:italic; }
         <div class="card">
           <div class="card-label">TRIBAL REVEAL</div>
           <div class="card-title">Progressive Dossier</div>
-          <div class="card-text">Captain command panels scrambling between pending, partial, and resolved states. Each tribal reveal was a narrative beat controlled by the Activation API &mdash; identity fields decrypting in sequence as the war approached.</div>
+          <div class="card-text">Tribe leaders and their tribe names were rolled out progressively as they were created, before the war started. The display cycled through pending, partial, and resolved states depending on the current stage &mdash; each transition driven by the Activation API.</div>
         </div>
       </div>
     </div>
@@ -382,7 +383,7 @@ p.t em{ color:var(--text); font-style:italic; }
 
     <div class="fade-in">
       <div class="stats">
-        <div class="stat"><div class="stat-val">6</div><div class="stat-lbl">Components</div></div>
+        <div class="stat"><div class="stat-val">6</div><div class="stat-lbl">Runtime Layers</div></div>
         <div class="stat"><div class="stat-val">11</div><div class="stat-lbl">Move Modules</div></div>
         <div class="stat"><div class="stat-val">Play-to-Score</div><div class="stat-lbl">Zero Player Setup</div></div>
         <div class="stat"><div class="stat-val">Chain-Verified</div><div class="stat-lbl">Resolution</div></div>
@@ -390,7 +391,7 @@ p.t em{ color:var(--text); font-style:italic; }
     </div>
 
     <div class="fade-in">
-      <p class="t">The Lineage War is a territorial control event system on Sui for EVE Frontier. Operators create wars, register tribes, publish phases with per-system scoring rules, and schedule termination. The verifier discovers wars from chain events, scores continuously off-chain, generates auditable public artifacts, and submits final resolution transactions. The ledger is append-only. Judgment is not retracted.</p>
+      <p class="t">The Lineage War is a <strong>territorial control event system</strong> on Sui for EVE Frontier. Operators create wars, register tribes, publish phases with per-system scoring rules, and schedule termination. The verifier discovers wars from chain events, <strong>scores continuously off-chain</strong>, generates auditable public artifacts, and submits final resolution transactions. The ledger is <strong>append-only</strong>. Judgment is not retracted.</p>
     </div>
 
     <!-- EDIT: Architecture from lineagewar-OSS -->
@@ -456,7 +457,7 @@ p.t em{ color:var(--text); font-style:italic; }
         <div class="card">
           <div class="card-label">VERIFIER</div>
           <div class="card-title">Event-Driven Scoring</div>
-          <div class="card-text">Single Node.js process. Auto-discovers wars from chain events. Per-tick: queries assembly locations via GraphQL, resolves ownership through 3-batch pipeline, evaluates rules, commits to PostgreSQL, writes atomic public artifacts.</div>
+          <div class="card-text"><strong>Single Node.js process.</strong> Auto-discovers wars from chain events. Per-tick: queries assembly locations via GraphQL, resolves ownership through 3-batch pipeline, evaluates rules, commits to PostgreSQL, writes <strong>atomic public artifacts</strong>.</div>
         </div>
         <div class="card">
           <div class="card-label">ADMIN</div>
@@ -474,7 +475,7 @@ p.t em{ color:var(--text); font-style:italic; }
     <div class="fade-in">
       <div class="callout">
         <div class="callout-label">COMPOSABILITY</div>
-        <p class="t">WarResolution objects live on-chain as permanent shared objects. The prediction market reads them directly to settle bets. No oracle. No settlement delay. Result published = market settles. The Orchestrator does not judge who won. The chain does.</p>
+        <p class="t">WarResolution objects live on-chain as <strong>permanent shared objects</strong>. The prediction market reads them directly to settle bets. <strong>No oracle. No settlement delay.</strong> Result published = market settles. The Orchestrator does not judge who won. The chain does.</p>
       </div>
     </div>
   </div>
@@ -494,8 +495,8 @@ p.t em{ color:var(--text); font-style:italic; }
     </div>
 
     <div class="fade-in">
-      <p class="t">Prediction markets are the Orchestrator's kiln made economic. Players stake capital on outcomes they believe will happen. The market forces convergence on truth. Wrong predictions are costly. Correct ones profit. This is pressure that separates signal from noise.</p>
-      <p class="t">The Orchestrator does not need to judge who won. The market does it for him. Consensus under pressure. This is the experiment.</p>
+      <p class="t">Prediction markets are the Orchestrator's kiln made economic. Players <strong>stake capital on outcomes</strong> they believe will happen. The market forces convergence on truth. Wrong predictions are costly. Correct ones profit. This is <strong>pressure that separates signal from noise</strong>.</p>
+      <p class="t">The Orchestrator does not need to judge who won. The market does it for him. <strong>Consensus under pressure.</strong> This is the experiment.</p>
     </div>
 
 
@@ -574,7 +575,7 @@ p.t em{ color:var(--text); font-style:italic; }
         <div class="card">
           <div class="card-label">AMM</div>
           <div class="card-title">Constant-Product Market Maker</div>
-          <div class="card-text">CPMM pricing in pure Move integer arithmetic. Ceiling division on buy, floor division on sell &mdash; pool always wins rounding, solvency guaranteed by invariant. Binary markets use closed-form math; N-outcome markets use binary search over the product invariant. Scales to 16 outcomes.</div>
+          <div class="card-text">CPMM pricing in <strong>pure Move integer arithmetic</strong>. Ceiling division on buy, floor division on sell &mdash; pool always wins rounding, solvency guaranteed by invariant. Binary markets use closed-form math; N-outcome markets use binary search over the product invariant. <strong>Scales to 16 outcomes.</strong></div>
         </div>
         <div class="card">
           <div class="card-label">SDVM</div>
@@ -584,7 +585,7 @@ p.t em{ color:var(--text); font-style:italic; }
         <div class="card">
           <div class="card-label">GAS RELAY</div>
           <div class="card-title">Sponsored Transactions</div>
-          <div class="card-text">Part of the deployed trust boundary, not convenience infrastructure. Validates transaction shape against policy, rejects non-conforming calls, sponsors approved ones. Users need zero SUI to participate. The relay is why the airdrop works &mdash; new players claim $SUFFER without owning gas.</div>
+          <div class="card-text">Part of the <strong>deployed trust boundary</strong>, not convenience infrastructure. Validates transaction shape against policy, rejects non-conforming calls, sponsors approved ones. <strong>Users need zero SUI to participate.</strong> The relay is why the airdrop works &mdash; new players claim $SUFFER without owning gas.</div>
         </div>
         <div class="card">
           <div class="card-label">SAFETY LEVERS</div>
@@ -597,7 +598,7 @@ p.t em{ color:var(--text); font-style:italic; }
     <div class="fade-in">
       <div class="callout">
         <div class="callout-label">ECONOMIC ALIGNMENT</div>
-        <p class="t">Correct votes are profitable. Wrong votes are costly. Committing but not revealing incurs a 10x penalty. The Schelling Point ensures convergence: if the truth is obvious, you vote for it, because you expect everyone else to do the same. Prediction markets are not speculation. They are pressure chambers for reality.</p>
+        <p class="t">Correct votes are profitable. Wrong votes are costly. Committing but not revealing incurs a <strong>10x penalty</strong>. The Schelling Point ensures convergence: if the truth is obvious, you vote for it, because you expect everyone else to do the same. Prediction markets are not speculation. They are <strong>pressure chambers for reality</strong>.</p>
       </div>
     </div>
   </div>
@@ -623,8 +624,8 @@ p.t em{ color:var(--text); font-style:italic; }
     </div>
 
     <div class="fade-in">
-      <p class="t">A prediction market without liquidity is a theory. $SUFFER (SFR) exists to make participation immediate. The gas relay sponsors every transaction. The faucet distributes starter capital. The result: a Rider connects their EVE Vault wallet, claims 100,000 SFR, and begins trading outcome shares within minutes &mdash; zero SUI required, zero friction, zero excuses.</p>
-      <p class="t">The Orchestrator does not give you money. He gives you stake. What you do with it is the experiment.</p>
+      <p class="t">A prediction market without liquidity is a theory. <strong>$SUFFER (SFR)</strong> exists to make participation immediate. The gas relay sponsors every transaction. The faucet distributes starter capital. The result: a Rider connects their EVE Vault wallet, claims <strong>100,000 SFR</strong>, and begins trading outcome shares within minutes &mdash; <strong>zero SUI required</strong>, zero friction, zero excuses.</p>
+      <p class="t">The Orchestrator does not give you money. He gives you <strong>stake</strong>. What you do with it is the experiment.</p>
 
     </div>
 
@@ -656,7 +657,7 @@ p.t em{ color:var(--text); font-style:italic; }
     <div class="fade-in">
       <div class="callout">
         <div class="callout-label">$SUFFER (SFR)</div>
-        <p class="t">The collateral token for all market activity. Starter claim of 100,000 SFR via the on-chain faucet, with 10,000 SFR daily returns. Gas-sponsored claims through the relay &mdash; players need only their EVE Vault wallet tied to their Frontier Rider. The faucet ran as a live campaign, distributing from a pool of 4.9M SFR. The Orchestrator does not give you money. He gives you stake.</p>
+        <p class="t">The collateral token for all market activity. Starter claim of <strong>100,000 SFR</strong> via the on-chain faucet, with 10,000 SFR daily returns. Gas-sponsored claims through the relay &mdash; players need only their EVE Vault wallet tied to their Frontier Rider. The faucet ran as a live campaign, distributing from a pool of <strong>4.9M SFR</strong>.</p>
       </div>
     </div>
 
@@ -676,42 +677,26 @@ p.t em{ color:var(--text); font-style:italic; }
     </div>
 
     <div class="fade-in">
-      <p class="t">Every component is open-source and reusable. Not just the code &mdash; the methodology. Character-driven game modes on composable blockchain infrastructure. MIT licensed. Fork and deploy.</p>
-    </div>
-
-    <!-- EDIT: GitHub repo links -->
-    <div class="fade-in" style="display:flex;gap:1rem;flex-wrap:wrap;">
-      <a href="https://github.com/saemihemma/lineagewar-OSS" target="_blank" class="gh">
-        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-        lineagewar-OSS
-      </a>
-      <a href="https://github.com/saemihemma/predictionmarket-OSS" target="_blank" class="gh">
-        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-        predictionmarket-OSS
-      </a>
-      <a href="https://github.com/saemihemma/lead-producer-OSS" target="_blank" class="gh">
-        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-        lead-producer-OSS
-      </a>
+      <p class="t">Every component is <strong>open-source and reusable</strong>. Not just the code &mdash; the methodology. Character-driven game modes on composable blockchain infrastructure. <strong>MIT licensed. Fork and deploy.</strong></p>
     </div>
 
     <div class="fade-in">
       <div class="grid">
-        <div class="card">
-          <div class="card-label">WAR ENGINE</div>
+        <a href="https://github.com/saemihemma/lineagewar-OSS" target="_blank" class="card" style="text-decoration:none;color:inherit;display:block;">
+          <div class="card-label" style="display:flex;align-items:center;justify-content:space-between;">WAR ENGINE <svg viewBox="0 0 16 16" style="width:12px;height:12px;fill:var(--text-dim);"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></div>
           <div class="card-title">lineagewar-OSS</div>
           <div class="card-text">11 Move modules, event-driven verifier, admin panel, CRT scoreboard, activation API, pre-hype landing page. Complete territorial control game mode. Fork and deploy for any Frontier event.</div>
-        </div>
-        <div class="card">
-          <div class="card-label">PREDICTION MARKET</div>
+        </a>
+        <a href="https://github.com/saemihemma/predictionmarket-OSS" target="_blank" class="card" style="text-decoration:none;color:inherit;display:block;">
+          <div class="card-label" style="display:flex;align-items:center;justify-content:space-between;">PREDICTION MARKET <svg viewBox="0 0 16 16" style="width:12px;height:12px;fill:var(--text-dim);"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></div>
           <div class="card-title">predictionmarket-OSS</div>
           <div class="card-text">19 Move modules, React frontend, gas relay, phase bot. CPMM AMM, Schelling DVM dispute resolution, $SUFFER token, sponsored transactions. Plug into any on-chain outcome.</div>
-        </div>
-        <div class="card">
-          <div class="card-label">EMERGED FROM THIS</div>
+        </a>
+        <a href="https://github.com/saemihemma/lead-producer-OSS" target="_blank" class="card" style="text-decoration:none;color:inherit;display:block;">
+          <div class="card-label" style="display:flex;align-items:center;justify-content:space-between;">EMERGED FROM THIS <svg viewBox="0 0 16 16" style="width:12px;height:12px;fill:var(--text-dim);"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></div>
           <div class="card-title">lead-producer-OSS</div>
-          <div class="card-text">Full-stack AI product team framework that emerged from building the Orchestrator. 57 skills: 34 specialist roles, 12 review teams, 10 workflows. One entry point, structured analysis, coordinated agentic development. Used to build, review, and harden every component in this stack.</div>
-        </div>
+          <div class="card-text">Full-stack AI product team framework that emerged from building the Orchestrator. <strong>57 specialist skills</strong>: 34 roles, 12 review teams, 10 workflows. One entry point, structured analysis, coordinated agentic development. Used to build, review, and harden every component in this stack.</div>
+        </a>
         <div class="card">
           <div class="card-label">DESIGN SYSTEM</div>
           <div class="card-title">CRT Terminal Kit</div>
@@ -735,7 +720,7 @@ p.t em{ color:var(--text); font-style:italic; }
     </div>
 
     <div class="fade-in">
-      <p class="t">The Orchestrator is currently operated by a human. The aspiration: when the system runs itself &mdash; when an AI generates Ukases, creates game modes, sets bounties in $SUFFER &mdash; that is when the experiment is complete. All grounded in the kernel: the Orchestrator wants death on the Frontier because death is the kiln. Without real loss, there is no pressure. Without pressure, nothing crystallizes. The autonomous agent is not a convenience &mdash; it is the only way the experiment scales past what one Rider can run.</p>
+      <p class="t">The Orchestrator is currently operated by a human. The aspiration: <strong>when the system runs itself</strong> &mdash; when an AI generates Ukases, creates game modes, sets bounties in $SUFFER &mdash; that is when the experiment is complete. All grounded in the kernel: the Orchestrator wants death on the Frontier because <strong>death is the kiln</strong>. Without real loss, there is no pressure. Without pressure, nothing crystallizes. The autonomous agent is not a convenience &mdash; it is the only way the experiment <strong>scales past what one Rider can run</strong>.</p>
     </div>
 
     <div class="fade-in">
@@ -789,7 +774,7 @@ p.t em{ color:var(--text); font-style:italic; }
         <div class="card">
           <div class="card-label">NARRATIVE-FIRST</div>
           <div class="card-title">Character as Architecture</div>
-          <div class="card-text">The Orchestrator's ideology drove every product decision &mdash; from the war engine to the token design. Same monospace font, same phosphor palette, same scanline grain across every surface. When the character and the system design are the same thing, coherence comes free. The fiction was not wrapped around tools. The tools are the fiction.</div>
+          <div class="card-text">The Orchestrator's ideology drove every product decision &mdash; from the war engine to the token design. Same monospace font, same phosphor palette, same scanline grain across every surface. When the character and the system design are the same thing, <strong>coherence comes free</strong>. The fiction was not wrapped around tools. The tools are the fiction.</div>
         </div>
         <div class="card">
           <div class="card-label">CHAIN-NATIVE</div>
@@ -799,17 +784,17 @@ p.t em{ color:var(--text); font-style:italic; }
         <div class="card">
           <div class="card-label">PROBABILISTIC</div>
           <div class="card-title">Markets as Truth Discovery</div>
-          <div class="card-text">Prediction markets don't just bet on outcomes &mdash; they discover them. Price signals inform strategy. Wrong predictions get slashed. The Schelling Point is the Orchestrator's most honest instrument.</div>
+          <div class="card-text">Prediction markets turn conviction into price signals. Participants who are wrong lose capital; participants who are right profit. The Lineage War is the <strong>bootstrap mechanism</strong> &mdash; it creates real on-chain outcomes for the market to price, giving the system something to bet on from day one.</div>
         </div>
         <div class="card">
           <div class="card-label">PROGRESSIVE</div>
           <div class="card-title">Honest Decentralization</div>
-          <div class="card-text">Don't pretend to be trustless on day one. Document every admin override, instrument every usage, publish removal criteria. "Bootstrap and safety levers, not evidence of finished decentralization."</div>
+          <div class="card-text">Tracer bullet first. Ship with admin levers, document every one, instrument usage, publish the criteria for removing each. Be honest about what is centralized and why. Open-source the code so the community can verify and help close the gap.</div>
         </div>
         <div class="card">
           <div class="card-label">AGENTIC</div>
           <div class="card-title">AI as Collaborator</div>
-          <div class="card-text">This entire system was co-created by a human-AI team during a hackathon. Claude wrote contracts, reviewed architecture, red-teamed economics. The result: lead-producer &mdash; 57 specialist skills that emerged from the process of building this stack.</div>
+          <div class="card-text">This entire system was <strong>co-created by a human-AI team</strong> during a hackathon. Claude wrote contracts, reviewed architecture, red-teamed economics. The result: lead-producer &mdash; <strong>57 specialist skills</strong> that emerged from the process of building this stack.</div>
         </div>
       </div>
     </div>
@@ -830,9 +815,9 @@ p.t em{ color:var(--text); font-style:italic; }
     Built by CCP Goodfella + Claude &bull; Open Source &bull; MIT License
   </div>
   <div style="margin-top:1.5rem;display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;">
-    <a href="https://github.com/saemihemma/lineagewar-OSS" target="_blank" class="gh" style="font-size:0.5rem;">lineagewar-OSS</a>
-    <a href="https://github.com/saemihemma/predictionmarket-OSS" target="_blank" class="gh" style="font-size:0.5rem;">predictionmarket-OSS</a>
-    <a href="https://github.com/saemihemma/lead-producer-OSS" target="_blank" class="gh" style="font-size:0.5rem;">lead-producer-OSS</a>
+    <a href="https://github.com/saemihemma/lineagewar-OSS" target="_blank" class="gh" style="font-size:0.5rem;"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg> lineagewar-OSS</a>
+    <a href="https://github.com/saemihemma/predictionmarket-OSS" target="_blank" class="gh" style="font-size:0.5rem;"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg> predictionmarket-OSS</a>
+    <a href="https://github.com/saemihemma/lead-producer-OSS" target="_blank" class="gh" style="font-size:0.5rem;"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg> lead-producer-OSS</a>
   </div>
 </footer>
 
