@@ -1975,7 +1975,10 @@ async function startHttpServer(
   ): boolean {
     const safePath = urlPath.replace(/\.\./g, "").replace(/\/+/g, "/");
     let filePath = path.join(baseDir, safePath);
-    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+      const dirIndex = path.join(filePath, "index.html");
+      filePath = fs.existsSync(dirIndex) ? dirIndex : path.join(baseDir, "index.html");
+    } else if (!fs.existsSync(filePath)) {
       filePath = path.join(baseDir, "index.html");
     }
     if (!fs.existsSync(filePath)) return false;
